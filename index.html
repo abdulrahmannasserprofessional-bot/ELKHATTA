@@ -1,539 +1,759 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>elkhatta | المنصة التعليمية</title>
+    <title>ELKHATTA - المنصة التعليمية المتكاملة</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 'tajawal': ['Tajawal', 'sans-serif'] },
+                }
+            }
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Tajawal', sans-serif; scroll-behavior: smooth; }
+        .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); }
+        .dark .hero-gradient { background: linear-gradient(135deg, #000000 0%, #1e293b 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); z-index: 1000; }
+        .active-tab-bg { background-color: rgba(59, 130, 246, 0.15); border-right: 4px solid #3b82f6; color: #3b82f6 !important; }
+        .recording-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .answer-correct { background-color: #d1fae5 !important; border-color: #10b981 !important; }
+        .answer-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; }
+        .exam-frame { width: 100%; height: 85vh; border: none; border-radius: 2rem; background: white; }
+        .marquee-container { overflow: hidden; white-space: nowrap; }
+        .marquee-text { display: inline-block; animation: marquee 20s linear infinite; }
+        @keyframes marquee { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-        // Firebase Configuration (team-30904)
+    <div id="app">
+        <!-- شاشة التحميل الأولية -->
+        <div id="app-loader" class="fixed inset-0 z-[5000] bg-white dark:bg-slate-900 flex flex-col items-center justify-center">
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 font-black text-blue-600 italic animate-pulse">جاري تأمين اتصال ELKHATTA بـ Firebase...</p>
+        </div>
+
+        <!-- شريط الإعلانات -->
+        <div id="announcement-bar" class="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white py-2 px-4 shadow-md relative z-[110] font-black text-sm text-center">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <i class="fas fa-bullhorn animate-bounce"></i>
+                <div class="marquee-container flex-grow px-4">
+                    <span id="announcement-text" class="marquee-text italic underline">مرحباً بكم في منصة ELKHATTA التعليمية - رحلة التميز تبدأ هنا.</span>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="opacity-50 hover:opacity-100"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+
+        <!-- واجهة الطالب -->
+        <div id="student-view" class="block">
+            <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg shadow-sm sticky top-0 z-[100] border-b dark:border-slate-800">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-20 items-center">
+                        <div class="flex items-center gap-10">
+                            <span class="text-3xl font-black text-blue-700 tracking-tighter cursor-pointer" onclick="window.ui.showHome()">EL<span class="text-slate-900 dark:text-white">KHATTA</span></span>
+                            <div class="hidden md:flex space-x-reverse space-x-8 font-bold text-slate-500">
+                                <a href="javascript:void(0)" onclick="window.ui.showHome()" class="hover:text-blue-600 transition">الرئيسية</a>
+                                <a href="javascript:void(0)" onclick="window.ui.scrollToSection('subjects-section')" class="hover:text-blue-600 transition">المواد</a>
+                                <a href="javascript:void(0)" onclick="window.ui.showAskPage()" class="text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-1.5 rounded-full border border-blue-100 transition">اسأل <i class="fas fa-paper-plane ml-1"></i></a>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div id="student-profile-link" class="hidden md:flex items-center gap-3 bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-2xl cursor-pointer hover:bg-blue-50 transition border dark:border-slate-700" onclick="window.ui.showProfile()">
+                                <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-black shadow-sm" id="nav-user-initial">?</div>
+                                <span class="text-xs font-black truncate max-w-[100px]" id="nav-user-name">طالب</span>
+                            </div>
+                            <button onclick="window.ui.toggleDarkMode()" class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 transition shadow-sm">
+                                <i id="theme-icon" class="fas fa-moon"></i>
+                            </button>
+                            <button onclick="window.ui.showLoginModal()" class="text-slate-400 hover:text-blue-600 transition p-3"><i class="fas fa-lock text-xl"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div id="page-content" class="min-h-screen">
+                <!-- الصفحة الرئيسية -->
+                <div id="home-content" class="page-section">
+                    <section class="hero-gradient text-white py-24 px-4 relative overflow-hidden font-black">
+                        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12 text-right relative z-10">
+                            <div class="md:w-1/2">
+                                <h1 class="text-6xl font-black mb-6 leading-tight italic tracking-tighter uppercase">الخطة التعليمية <br><span class="text-blue-400">ELKHATTA</span></h1>
+                                <p class="text-xl mb-10 opacity-90 leading-relaxed font-medium italic underline decoration-white/10 uppercase">منصتك الحقيقية للتعلم، التقييم، وبناء مستقبلك الأكاديمي.</p>
+                                <div class="relative max-w-md group">
+                                    <input type="text" oninput="window.ui.handleSearch(this.value)" placeholder="ابحث عن مادة أو درس..." class="w-full p-5 pr-14 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-white/60 focus:bg-white focus:text-slate-900 transition-all outline-none shadow-2xl font-black italic">
+                                    <i class="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-xl opacity-60"></i>
+                                    <div id="search-results" class="absolute top-full right-0 left-0 mt-3 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl hidden overflow-hidden z-50 border dark:border-slate-800 text-slate-800 dark:text-white"></div>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2 flex justify-end">
+                                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80" class="rounded-[3.5rem] shadow-2xl w-full max-w-md border-[10px] border-white/10 transform rotate-1">
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="max-w-7xl mx-auto px-4 -mt-12 relative z-20">
+                        <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 grid grid-cols-2 md:grid-cols-4 gap-8 border dark:border-slate-800 font-black italic text-right">
+                            <div class="text-center">
+                                <div class="text-3xl font-black text-blue-600 italic tracking-tighter" id="stat-sub-count">0</div>
+                                <div class="text-slate-400 text-xs font-bold uppercase tracking-widest italic">مادة دراسية</div>
+                            </div>
+                            <div class="text-center border-r dark:border-slate-800">
+                                <div class="text-3xl font-black text-green-500 italic tracking-tighter" id="stat-res-count">0</div>
+                                <div class="text-slate-400 text-xs font-bold uppercase tracking-widest italic">نتائج مسجلة</div>
+                            </div>
+                            <div class="text-center border-r dark:border-slate-800">
+                                <div class="text-3xl font-black text-yellow-500 italic tracking-tighter">24/7</div>
+                                <div class="text-slate-400 text-xs font-bold uppercase tracking-widest italic">دعم تعليمي</div>
+                            </div>
+                            <div class="text-center border-r dark:border-slate-800">
+                                <div class="text-3xl font-black text-purple-600 italic tracking-tighter">+500</div>
+                                <div class="text-slate-400 text-xs font-bold uppercase tracking-widest italic">طالب نشط</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <section class="py-20 max-w-7xl mx-auto px-4 text-right">
+                        <h2 class="text-3xl font-black mb-12 italic border-r-8 border-blue-600 pr-6 uppercase tracking-tighter underline decoration-blue-100 dark:decoration-blue-900 underline-offset-8">أحدث الإضافات <i class="fas fa-bolt text-yellow-500 mr-2"></i></h2>
+                        <div id="latest-content-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 italic font-black"></div>
+                    </section>
+
+                    <section class="py-24 bg-slate-50 dark:bg-slate-950">
+                        <div class="max-w-7xl mx-auto px-4 text-center">
+                            <h2 class="text-4xl font-black mb-16 italic tracking-tighter uppercase underline decoration-yellow-500/20 underline-offset-[16px]">لوحة شرف المتميزين <i class="fas fa-award text-yellow-500 ml-2"></i></h2>
+                            <div id="leaderboard-grid" class="grid grid-cols-1 md:grid-cols-3 gap-10 text-right"></div>
+                        </div>
+                    </section>
+
+                    <section id="subjects-section" class="py-24 max-w-7xl mx-auto px-4 text-right italic font-black uppercase">
+                        <h2 class="text-5xl font-black text-slate-900 dark:text-white mb-12 text-center uppercase tracking-widest italic underline decoration-blue-50 decoration-[16px] underline-offset-[20px] tracking-widest uppercase">المواد الدراسية</h2>
+                        <div id="subjects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 text-right uppercase tracking-widest font-black italic"></div>
+                    </section>
+                </div>
+
+                <!-- تفاصيل المادة -->
+                <div id="subject-details" class="hidden py-16 max-w-7xl mx-auto px-4 text-right page-section font-black italic">
+                    <button onclick="window.ui.showHome()" class="bg-white dark:bg-slate-800 px-8 py-4 rounded-3xl font-black shadow-xl border dark:border-slate-700 flex items-center gap-4 mb-16 group hover:bg-slate-50 transition">
+                        <i class="fas fa-arrow-right group-hover:translate-x-2 transition text-blue-600"></i> رجوع للمواد
+                    </button>
+                    <div id="subject-header" class="mb-20 text-center italic tracking-tighter font-black uppercase underline decoration-blue-100 decoration-8 underline-offset-12"></div>
+                    <div id="courses-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-12 text-right italic font-black"></div>
+                </div>
+
+                <!-- صفحة اسأل -->
+                <div id="ask-page" class="hidden py-16 max-w-5xl mx-auto px-4 text-right page-section italic font-black uppercase">
+                    <button onclick="window.ui.showHome()" class="bg-white dark:bg-slate-800 px-8 py-4 rounded-3xl font-black shadow-xl border dark:border-slate-700 flex items-center gap-4 mb-12 group hover:bg-slate-50 transition">
+                        <i class="fas fa-arrow-right group-hover:translate-x-2 transition text-blue-600"></i> إلغاء والرجوع
+                    </button>
+                    <div class="bg-white dark:bg-slate-900 rounded-[4rem] shadow-2xl p-16 border dark:border-slate-800 relative overflow-hidden">
+                        <h2 class="text-4xl font-black mb-12 italic border-r-12 border-blue-600 pr-8">اسأل المنصة <i class="fas fa-headset text-blue-600 mr-2"></i></h2>
+                        <div class="space-y-10 relative z-10 font-black text-right italic uppercase">
+                            <textarea id="ask-text" class="w-full p-10 border-2 dark:border-slate-800 rounded-[3rem] h-56 bg-slate-50 dark:bg-slate-950 focus:bg-white outline-none focus:border-blue-500 transition text-2xl shadow-inner font-medium shadow-inner" placeholder="اكتب استفسارك هنا بالتفصيل..."></textarea>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 italic">
+                                <div class="p-10 bg-slate-50 dark:bg-slate-800 rounded-[3rem] border-2 dark:border-slate-700 border-white shadow-sm flex flex-col justify-center italic font-black">
+                                    <label class="block font-black mb-4 text-xl underline decoration-blue-200 decoration-4 uppercase tracking-tighter">رفع صورة توضيحية</label>
+                                    <input type="file" id="ask-image-file" accept="image/*" class="w-full p-4 rounded-2xl bg-white dark:bg-slate-900 border cursor-pointer font-black italic">
+                                </div>
+                                <div class="p-10 bg-blue-50 dark:bg-blue-950 rounded-[3rem] border-2 border-blue-100 dark:border-blue-900 flex flex-col items-center justify-center italic underline decoration-blue-200 decoration-4 uppercase">
+                                    <span class="font-black text-blue-900 dark:text-blue-400 mb-8 text-xl italic uppercase">تسجيل صوتي</span>
+                                    <div class="flex items-center gap-8">
+                                        <button id="record-btn" onclick="window.ui.toggleRecording()" class="w-24 h-24 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition transform active:scale-95 border-8 border-white dark:border-slate-800 shadow-2xl shadow-blue-300">
+                                            <i id="record-icon" class="fas fa-microphone text-4xl"></i>
+                                        </button>
+                                        <div id="record-preview-box" class="hidden"><audio id="record-preview" controls class="h-10 w-48 shadow-xl rounded-full"></audio></div>
+                                    </div>
+                                    <button id="clear-record" onclick="window.ui.clearRecording()" class="hidden mt-4 text-red-500 font-bold uppercase underline italic font-black">مسح</button>
+                                </div>
+                            </div>
+                            <button onclick="window.ui.submitQuestion()" class="w-full bg-slate-900 dark:bg-blue-600 text-white py-10 rounded-[3.5rem] font-black text-4xl hover:bg-blue-700 shadow-3xl transition transform hover:-translate-y-2 flex items-center justify-center gap-6 italic tracking-widest font-black uppercase">إرسال الطلب الآن <i class="fas fa-paper-plane mr-4"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الملف الشخصي -->
+                <div id="student-profile" class="hidden py-16 max-w-4xl mx-auto px-4 text-right page-section font-black italic">
+                    <button onclick="window.ui.showHome()" class="bg-white dark:bg-slate-800 px-8 py-4 rounded-3xl font-black shadow-xl border dark:border-slate-700 flex items-center gap-4 mb-12 group hover:bg-slate-50 transition italic uppercase tracking-widest underline underline-offset-8 decoration-blue-500/20">
+                        <i class="fas fa-arrow-right group-hover:translate-x-2 transition text-blue-600 font-black"></i> رجوع
+                    </button>
+                    <div class="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl p-16 border dark:border-slate-800 text-center relative overflow-hidden font-black">
+                        <div class="w-32 h-32 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-8 text-4xl font-black shadow-xl" id="profile-initial">?</div>
+                        <h2 class="text-4xl font-black mb-4 italic uppercase tracking-widest underline decoration-slate-100 dark:decoration-slate-800 decoration-8 underline-offset-8 italic" id="profile-name">...</h2>
+                        <p class="text-slate-400 font-bold mb-12 italic border-b pb-8 dark:border-slate-800" id="profile-phone">رقم الهاتف: ...</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-right font-black italic">
+                            <div class="p-10 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border-2 border-white dark:border-slate-800 shadow-xl">
+                                <span class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4 italic underline decoration-blue-100 decoration-4 uppercase">عدد الاختبارات</span>
+                                <span class="text-6xl font-black text-blue-600 italic tracking-tighter" id="profile-exam-count">0</span>
+                            </div>
+                            <div class="p-10 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border-2 border-white dark:border-slate-800 shadow-xl">
+                                <span class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4 italic underline decoration-green-100 decoration-4 uppercase tracking-tighter italic">متوسط النتيجة</span>
+                                <span class="text-6xl font-black text-green-500 italic tracking-tighter font-black" id="profile-avg-score">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- واجهة الإدارة -->
+        <div id="admin-view" class="hidden min-h-screen bg-[#f1f5f9] dark:bg-slate-950 flex flex-col md:flex-row text-right page-section font-black italic underline decoration-transparent">
+            <aside class="w-full md:w-80 admin-sidebar text-white p-10 flex flex-col shadow-2xl relative z-50">
+                <div class="text-4xl font-black mb-20 text-blue-400 tracking-tighter flex items-center gap-4 cursor-pointer uppercase italic underline decoration-blue-600/10 underline-offset-8" onclick="window.ui.showHome()">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl shadow-xl rotate-3"></div> ELKHATTA
+                </div>
+                <nav class="space-y-4 flex-grow text-right font-black uppercase tracking-tighter italic font-black italic tracking-widest underline decoration-transparent">
+                    <button onclick="window.ui.switchAdminTab('materials')" class="w-full text-right p-5 rounded-3xl hover:bg-white/5 transition flex items-center gap-5 active-tab-bg text-lg italic" id="tab-btn-materials"><i class="fas fa-cubes italic"></i> المواد الدراسية</button>
+                    <button onclick="window.ui.switchAdminTab('broadcast')" class="w-full text-right p-5 rounded-3xl hover:bg-white/5 transition flex items-center gap-5 text-lg text-yellow-400 italic font-black" id="tab-btn-broadcast"><i class="fas fa-bullhorn italic"></i> شريط الإعلانات</button>
+                    <button onclick="window.ui.switchAdminTab('honored')" class="w-full text-right p-5 rounded-3xl hover:bg-white/5 transition flex items-center gap-5 text-lg text-purple-400 italic font-black" id="tab-btn-honored"><i class="fas fa-medal italic"></i> لوحة الأوائل</button>
+                    <button onclick="window.ui.switchAdminTab('questions')" class="w-full text-right p-5 rounded-3xl hover:bg-white/5 transition flex items-center gap-5 text-lg font-black" id="tab-btn-questions"><i class="fas fa-inbox font-black italic"></i> بريد الطلاب</button>
+                    <button onclick="window.ui.switchAdminTab('results')" class="w-full text-right p-5 rounded-3xl hover:bg-white/5 transition flex items-center gap-5 text-lg text-green-400 italic" id="tab-btn-results"><i class="fas fa-poll font-black italic"></i> سجل النتائج</button>
+                </nav>
+                <button onclick="window.ui.logout()" class="w-full p-6 bg-red-600/10 text-red-400 rounded-3xl font-black text-xl hover:bg-red-600 hover:text-white transition flex items-center justify-center gap-4 uppercase italic shadow-xl">
+                    <i class="fas fa-power-off"></i> خروج للإدارة
+                </button>
+            </aside>
+
+            <main class="flex-grow p-8 md:p-16 overflow-y-auto italic font-black uppercase underline decoration-slate-100/10 tracking-widest font-black uppercase underline decoration-slate-100/10 tracking-widest italic">
+                <div id="tab-materials" class="admin-tab">
+                    <div class="flex justify-between items-center mb-16 italic font-black uppercase underline decoration-slate-100/10 tracking-widest">
+                        <h2 class="text-5xl font-black text-slate-800 dark:text-white border-r-12 border-blue-600 pr-8 italic uppercase tracking-widest underline decoration-blue-100 decoration-8 underline-offset-12 tracking-widest italic uppercase tracking-widest italic">إدارة المحتوى</h2>
+                        <button onclick="window.ui.openAddSubjectModal()" class="bg-blue-600 text-white px-12 py-5 rounded-[2.5rem] font-black text-3xl shadow-3xl transform hover:scale-105 transition uppercase underline decoration-white/20 tracking-tighter uppercase font-black">+ مادة جديدة</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 italic font-black uppercase text-center font-black italic tracking-widest underline decoration-transparent uppercase">
+                        <div class="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border dark:border-slate-800">
+                            <div class="text-blue-600 text-4xl mb-2 font-black italic" id="stat-subjects">0</div>
+                            <div class="text-slate-400 text-xs font-bold uppercase underline decoration-blue-100/10 uppercase italic">المواد</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border dark:border-slate-800">
+                            <div class="text-purple-600 text-4xl mb-2 font-black italic" id="stat-contents">0</div>
+                            <div class="text-slate-400 text-xs font-bold uppercase underline decoration-purple-100/10 italic">الفصول</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border dark:border-slate-800">
+                            <div class="text-yellow-600 text-4xl mb-2 font-black italic" id="stat-results">0</div>
+                            <div class="text-slate-400 text-xs font-bold uppercase underline decoration-yellow-100/10 italic">النتائج</div>
+                        </div>
+                    </div>
+                    <div id="admin-materials-container" class="space-y-16 italic font-black uppercase tracking-widest font-black italic underline decoration-transparent"></div>
+                </div>
+
+                <div id="tab-honored" class="hidden admin-tab italic font-black">
+                    <div class="flex justify-between items-center mb-16 border-r-12 border-purple-500 pr-8 uppercase italic font-black tracking-widest underline decoration-purple-100/10 decoration-8 underline-offset-12 font-black italic underline decoration-transparent">
+                        <h2 class="text-4xl font-black italic uppercase">تكريم الطلاب</h2>
+                        <button onclick="window.ui.openAddHonoredModal()" class="bg-purple-600 text-white px-10 py-5 rounded-3xl font-black shadow-xl italic tracking-widest uppercase underline decoration-white/10 italic underline decoration-transparent uppercase">+ إضافة مكرم</button>
+                    </div>
+                    <div id="admin-honored-list" class="grid grid-cols-1 md:grid-cols-2 gap-10 text-right italic font-black underline decoration-slate-50/10 italic underline decoration-transparent uppercase font-black italic"></div>
+                </div>
+
+                <div id="tab-broadcast" class="hidden admin-tab italic font-black underline decoration-transparent">
+                    <h2 class="text-4xl font-black mb-16 border-r-12 border-yellow-500 pr-8 uppercase italic tracking-widest underline decoration-yellow-100/10 underline-offset-[16px] italic underline decoration-transparent uppercase">شريط التنبيهات</h2>
+                    <div class="bg-white dark:bg-slate-900 p-12 rounded-[4rem] shadow-2xl border dark:border-slate-800 max-w-4xl italic font-black italic underline decoration-transparent">
+                        <textarea id="admin-broadcast-text" class="w-full p-10 border-4 dark:border-slate-800 rounded-[3rem] h-48 bg-slate-50 dark:bg-slate-950 outline-none font-black text-4xl italic shadow-inner tracking-tighter uppercase font-black italic underline decoration-transparent"></textarea>
+                        <button onclick="window.ui.updateAnnouncement()" class="w-full bg-yellow-500 text-slate-900 py-8 rounded-[3rem] font-black text-4xl mt-12 shadow-2xl hover:bg-yellow-400 transition transform active:scale-95 italic text-center uppercase tracking-widest font-black uppercase tracking-widest italic underline decoration-transparent">نشر الإعلان</button>
+                    </div>
+                </div>
+
+                <div id="tab-results" class="hidden admin-tab text-right italic font-black tracking-widest uppercase underline decoration-transparent italic">
+                    <div class="flex justify-between items-center mb-16 border-r-12 border-green-500 pr-8 italic underline decoration-green-100/10 decoration-8 underline-offset-12 italic uppercase font-black">
+                        <h2 class="text-5xl font-black italic uppercase underline decoration-transparent font-black">سجل الدرجات</h2>
+                        <button onclick="window.ui.exportToCSV()" class="bg-green-600 text-white px-12 py-5 rounded-[2.5rem] font-black shadow-3xl active:scale-95 transition flex items-center gap-6 text-2xl uppercase italic tracking-widest italic uppercase underline decoration-transparent">تصدير EXCEL <i class="fas fa-file-excel"></i></button>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded-[4rem] shadow-2xl border dark:border-slate-800 overflow-hidden font-black italic tracking-tighter italic font-black underline decoration-transparent">
+                        <div class="overflow-x-auto italic uppercase font-black">
+                            <table class="w-full border-collapse italic font-black uppercase underline decoration-transparent">
+                                <thead class="bg-slate-50 dark:bg-slate-800 border-b-8 dark:border-slate-700 border-white uppercase italic tracking-widest italic underline decoration-transparent">
+                                    <tr>
+                                        <th class="p-10 font-black text-slate-600 text-2xl underline italic">الطالب</th>
+                                        <th class="p-10 font-black text-slate-600 text-2xl underline italic">الاختبار</th>
+                                        <th class="p-10 font-black text-slate-600 text-center text-2xl underline font-black underline decoration-transparent italic">الدرجة</th>
+                                        <th class="p-10 font-black text-slate-600 text-2xl underline font-black underline decoration-transparent italic">التوقيت</th>
+                                        <th class="p-10 font-black text-slate-600 text-center text-2xl underline italic">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-results-list" class="divide-y-4 dark:divide-slate-800 divide-slate-50 italic uppercase underline decoration-transparent italic font-black"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-questions" class="hidden admin-tab italic font-black uppercase underline decoration-transparent italic font-black">
+                    <h2 class="text-5xl font-black dark:text-white mb-20 border-r-12 border-blue-600 pr-8 tracking-tighter uppercase italic tracking-tighter underline decoration-slate-50 decoration-8 underline-offset-12 text-right italic uppercase font-black tracking-widest">بريد الطلاب</h2>
+                    <div id="admin-questions-list" class="grid gap-16 italic uppercase font-black tracking-widest underline decoration-transparent"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- نافذة التسجيل الإلزامية -->
+    <div id="register-modal" class="fixed inset-0 modal-overlay z-[2000] hidden flex items-center justify-center p-4 italic uppercase font-black underline decoration-transparent">
+        <div class="bg-white dark:bg-slate-900 rounded-[4rem] p-16 max-w-xl w-full shadow-2xl border dark:border-slate-800 text-center relative overflow-hidden uppercase italic font-black underline decoration-transparent font-black italic underline decoration-transparent uppercase tracking-widest">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-600/10 rounded-full italic font-black uppercase"></div>
+            <h2 class="text-4xl font-black mb-8 text-blue-900 dark:text-blue-400 italic tracking-widest uppercase underline decoration-blue-100 decoration-8 underline-offset-12 font-black italic">إنشاء حساب طالب</h2>
+            <p class="text-slate-400 mb-10 font-bold text-xl italic tracking-tighter font-black underline decoration-transparent uppercase underline-offset-4 italic underline decoration-transparent">برجاء تسجيل بياناتك الثلاثية لتفعيل حسابك واستخدام المنصة</p>
+            <div class="space-y-8 italic font-black underline decoration-transparent uppercase tracking-widest">
+                <input type="text" id="reg-name" class="w-full p-8 border-4 border-slate-50 dark:border-slate-800 rounded-[2.5rem] text-center text-3xl font-black outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-950 transition italic uppercase tracking-widest italic font-black uppercase tracking-widest italic" placeholder="الاسم ثلاثي...">
+                <input type="tel" id="reg-phone" class="w-full p-8 border-4 border-slate-50 dark:border-slate-800 rounded-[2.5rem] text-center text-3xl font-black outline-none focus:border-blue-500 bg-slate-50 dark:bg-slate-950 transition italic tracking-widest tracking-widest font-black uppercase italic italic font-black uppercase tracking-widest italic" placeholder="رقم الهاتف (WhatsApp)...">
+            </div>
+            <button onclick="window.ui.registerAccount()" class="w-full mt-12 bg-blue-600 text-white py-8 rounded-[3rem] font-black text-3xl shadow-xl hover:scale-105 transition uppercase italic underline decoration-white/10 decoration-4 uppercase italic underline-offset-8 font-black uppercase">تأكيد الحساب والبدء <i class="fas fa-rocket mr-6 italic"></i></button>
+        </div>
+    </div>
+
+    <!-- نافذة تسجيل الدخول للإدارة -->
+    <div id="login-modal" class="fixed inset-0 modal-overlay z-[2000] hidden flex items-center justify-center p-4 italic font-black uppercase tracking-widest underline decoration-transparent">
+        <div class="bg-white dark:bg-slate-900 rounded-[4rem] p-16 max-w-md w-full shadow-2xl border dark:border-slate-800 text-center italic font-black tracking-widest uppercase underline decoration-slate-100 decoration-8 underline-offset-12 font-black italic underline decoration-transparent shadow-3xl italic">
+            <div class="w-28 h-28 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 text-5xl shadow-inner border-8 border-white dark:border-slate-800 rotate-2 italic font-black"><i class="fas fa-user-lock"></i></div>
+            <h2 class="text-4xl font-black mb-12 italic uppercase tracking-tighter underline underline-offset-[16px] italic">بوابة الإدارة</h2>
+            <input type="password" id="admin-pass" class="w-full p-8 border-4 rounded-[2.5rem] mb-12 text-center text-5xl tracking-[2rem] outline-none bg-slate-50 dark:bg-slate-800 focus:bg-white transition shadow-sm font-black italic shadow-inner italic" placeholder="••••">
+            <div class="flex gap-6 italic font-black uppercase tracking-widest underline decoration-transparent italic">
+                <button onclick="window.ui.login()" class="flex-grow bg-slate-900 dark:bg-blue-600 text-white py-6 rounded-[3rem] font-black text-2xl shadow-xl transition transform active:scale-95 italic tracking-widest uppercase italic font-black italic">دخول</button>
+                <button onclick="window.ui.closeModal('login-modal')" class="px-10 bg-slate-100 dark:bg-slate-800 text-slate-600 py-6 rounded-[3rem] font-bold italic tracking-tighter font-black italic uppercase underline decoration-transparent italic">إلغاء</button>
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-8 hidden font-black italic border-r-8 border-red-500 pr-6 uppercase italic font-black tracking-widest italic font-black italic uppercase">الكود خاطئ!</p>
+        </div>
+    </div>
+
+    <!-- نافذة المودال العام (إضافة مادة/فصل/محتوى) -->
+    <div id="content-modal" class="fixed inset-0 modal-overlay z-[2000] hidden flex items-center justify-center p-4 italic uppercase font-black underline decoration-transparent">
+        <div class="bg-white dark:bg-slate-900 rounded-[5rem] p-20 max-w-5xl w-full shadow-2xl border dark:border-slate-800 max-h-[90vh] overflow-y-auto text-right relative italic font-black tracking-widest uppercase underline decoration-slate-50/10 underline-offset-8 italic font-black underline decoration-transparent">
+            <button onclick="window.ui.closeModal('content-modal')" class="absolute top-12 left-12 text-slate-300 hover:text-red-500 transition text-4xl font-black italic uppercase underline decoration-transparent font-black italic">✕</button>
+            <h3 id="modal-title" class="text-5xl font-black text-blue-950 dark:text-blue-400 mb-16 border-b dark:border-slate-800 pb-10 italic uppercase underline decoration-blue-100 decoration-8 underline-offset-12 tracking-tighter uppercase tracking-widest tracking-widest italic font-black uppercase tracking-widest italic font-black italic underline decoration-transparent uppercase tracking-widest">إعداد محتوى جديد</h3>
+            <div id="content-form" class="space-y-16 italic font-black uppercase italic font-black italic underline decoration-transparent uppercase tracking-widest italic"></div>
+            <div class="flex gap-8 mt-24 italic font-black uppercase tracking-widest italic underline decoration-transparent uppercase font-black">
+                <button id="modal-save-btn" class="flex-grow bg-blue-600 text-white py-8 rounded-[4rem] font-black text-4xl shadow-[0_30px_60px_-15px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 transition tracking-tighter uppercase italic tracking-widest font-black italic underline decoration-white/10 decoration-4 italic uppercase tracking-widest uppercase font-black italic underline decoration-transparent uppercase tracking-widest font-black italic">حفظ بالمنصة</button>
+                <button onclick="window.ui.closeModal('content-modal')" class="px-16 bg-slate-100 dark:bg-slate-800 text-slate-600 py-8 rounded-[4rem] font-black text-2xl italic tracking-tighter uppercase italic italic uppercase tracking-widest font-black italic underline decoration-transparent uppercase tracking-widest font-black italic">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة عرض المحتوى (Video, File, Exam) -->
+    <div id="content-viewer" class="fixed inset-0 modal-overlay z-[3000] hidden flex items-center justify-center p-4 italic font-black uppercase tracking-widest underline decoration-transparent">
+        <div class="bg-white dark:bg-slate-900 rounded-[4rem] w-full max-w-[95vw] shadow-[0_100px_200px_-50px_rgba(0,0,0,0.7)] overflow-hidden relative border-[12px] border-white/30 dark:border-slate-800 italic uppercase underline decoration-transparent font-black italic">
+            <div class="p-8 bg-white dark:bg-slate-900 border-b dark:border-slate-800 flex justify-between items-center px-12 relative z-10 font-black italic uppercase tracking-widest underline decoration-slate-100/10 uppercase font-black italic tracking-widest italic font-black underline decoration-transparent tracking-widest font-black italic underline font-black italic underline decoration-transparent uppercase tracking-widest">
+                <button onclick="window.ui.closeModal('content-viewer')" class="bg-slate-900 dark:bg-blue-600 text-white px-12 py-3 rounded-3xl font-black shadow-3xl hover:bg-red-600 transition flex items-center gap-6 group italic font-black uppercase tracking-widest underline decoration-transparent">
+                     رجوع إغلاق <i class="fas fa-chevron-left group-hover:-translate-x-2 transition font-black italic underline decoration-transparent uppercase tracking-widest"></i>
+                </button>
+                <span id="viewer-title-text" class="font-black text-slate-900 dark:text-white text-3xl italic tracking-tighter truncate max-w-4xl uppercase underline decoration-blue-200 decoration-4 underline-offset-8 text-center uppercase font-black italic tracking-widest italic font-black underline decoration-transparent tracking-widest font-black italic underline font-black italic underline decoration-transparent uppercase tracking-widest italic font-black uppercase underline decoration-transparent tracking-widest uppercase">قاعة المحاضرات</span>
+            </div>
+            <div id="viewer-body" class="bg-slate-50 dark:bg-slate-950 min-h-[75vh] text-right overflow-y-auto max-h-[85vh] italic font-black underline decoration-transparent italic font-black underline decoration-transparent"></div>
+        </div>
+    </div>
+
+    <!-- نافذة الاسم قبل الاختبار -->
+    <div id="name-modal" class="fixed inset-0 modal-overlay z-[1000] hidden flex items-center justify-center p-4 italic font-black uppercase tracking-widest underline decoration-transparent font-black italic">
+        <div class="bg-white dark:bg-slate-900 rounded-[4rem] p-16 max-w-xl w-full shadow-2xl border dark:border-slate-800 text-center relative overflow-hidden uppercase italic font-black italic font-black underline decoration-transparent italic uppercase tracking-widest font-black italic">
+            <h2 class="text-4xl font-black mb-8 text-blue-900 dark:text-blue-400 italic underline decoration-blue-100 decoration-8 underline-offset-12 tracking-widest uppercase italic font-black">بدء الاختبار</h2>
+            <p class="text-slate-400 mb-12 font-bold text-xl tracking-tighter italic italic uppercase underline decoration-transparent font-black italic font-black uppercase tracking-widest">برجاء إدخال اسمك الثنائي لتوثيق نتيجتك</p>
+            <input type="text" id="student-name-input" class="w-full p-8 border-4 border-slate-50 dark:border-slate-800 rounded-[2.5rem] mb-12 text-center text-4xl font-black outline-none focus:border-blue-500 shadow-inner bg-slate-50 dark:bg-slate-950 transition uppercase tracking-widest italic italic font-black uppercase tracking-widest font-black italic" placeholder="الاسم هنا...">
+            <div class="flex gap-4 italic font-black uppercase tracking-widest italic underline decoration-transparent font-black italic font-black uppercase tracking-widest italic underline decoration-transparent">
+                <button onclick="window.ui.confirmStartExam()" class="flex-grow bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-xl hover:scale-105 active:scale-95 transition uppercase italic tracking-widest uppercase italic tracking-widest italic font-black uppercase tracking-widest font-black italic underline decoration-transparent italic font-black uppercase tracking-widest">ابدأ الاختبار</button>
+                <button onclick="window.ui.closeModal('name-modal')" class="px-10 bg-slate-100 dark:bg-slate-800 text-slate-600 py-6 rounded-[2.5rem] font-black text-xl italic tracking-tighter font-black italic underline decoration-transparent italic font-black uppercase tracking-widest">رجوع</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Integrated Logic Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Config ---
         const firebaseConfig = {
-            apiKey: "AIzaSyD6Km2JHC8B_-appNfQfntSQjZFjNha4TE",
-            authDomain: "team-30904.firebaseapp.com",
-            databaseURL: "https://team-30904-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "team-30904",
-            storageBucket: "team-30904.firebasestorage.app",
-            messagingSenderId: "410017809901",
-            appId: "1:410017809901:web:79d5c13ba8d7a3ad0153e4",
-            measurementId: "G-M91H1BFLR5"
+            apiKey: "AIzaSyAi0yz30GsnoTLR9xvHldTzyNObGPIMhtg",
+            authDomain: "school-fs.firebaseapp.com",
+            projectId: "school-fs",
+            storageBucket: "school-fs.firebasestorage.app",
+            messagingSenderId: "395769822315",
+            appId: "1:395769822315:web:cd94603f4ea8d4fe6f852e",
+            measurementId: "G-LM1RXNBPCY"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'elkhatta-v8-drive';
+        const platformId = 'elkhatta-v3';
 
-        window.fb = { 
-            auth, db, appId, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, limit,
-            getCol: (name) => collection(db, 'artifacts', appId, 'public', 'data', name),
-            getDocRef: (name, id) => doc(db, 'artifacts', appId, 'public', 'data', name, id)
-        };
+        // Paths based on Rule 1
+        const getCol = (n) => collection(db, 'artifacts', platformId, 'public', 'data', n);
+        const getDocRef = (n, id) => doc(db, 'artifacts', platformId, 'public', 'data', n, id);
+        const getUserDoc = (uid, n, id) => doc(db, 'artifacts', platformId, 'users', uid, n, id);
 
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    try { await signInWithCustomToken(auth, __initial_auth_token); } 
-                    catch (e) { await signInAnonymously(auth); }
-                } else { await signInAnonymously(auth); }
-            } catch (err) { window.updateConnectionStatus(false); }
-        };
+        window.appData = { subjects: [], questions: [], results: [], honored: [], user: null };
+        window.currentItem = null;
+        let audioBlob = null;
+        let isRecording = false;
+        let mediaRecorder;
+        let audioChunks = [];
 
-        onAuthStateChanged(auth, (user) => {
-            window.user = user;
-            if (user) {
-                window.updateConnectionStatus(true);
-                if (window.startApp) window.startApp();
-            } else { window.updateConnectionStatus(false); }
+        // --- Auth Implementation ---
+        onAuthStateChanged(auth, async (u) => {
+            if (!u) { await signInAnonymously(auth); }
+            else { 
+                const snap = await getDoc(getUserDoc(u.uid, 'profile', 'data'));
+                if(snap.exists()) {
+                    window.appData.user = snap.data();
+                    updateProfileUI();
+                } else { 
+                    document.getElementById('register-modal').classList.remove('hidden'); 
+                }
+                setupListeners();
+            }
         });
-        initAuth();
+
+        function setupListeners() {
+            onSnapshot(getCol('subjects'), (s) => { window.appData.subjects = s.docs.map(d => ({id: d.id, ...d.data()})); window.ui.renderSubjects(); window.ui.renderLatestContent(); window.ui.renderAdminMaterials(); document.getElementById('app-loader').classList.add('hidden'); });
+            onSnapshot(getCol('questions'), (s) => { window.appData.questions = s.docs.map(d => ({id: d.id, ...d.data()})); window.ui.renderAdminQuestions(); });
+            onSnapshot(getCol('results'), (s) => { window.appData.results = s.docs.map(d => ({id: d.id, ...d.data()})); window.ui.renderAdminResults(); });
+            onSnapshot(getCol('honored'), (s) => { window.appData.honored = s.docs.map(d => ({id: d.id, ...d.data()})); window.ui.renderLeaderboard(); window.ui.renderAdminHonored(); });
+            onSnapshot(getDocRef('config', 'broadcast'), (d) => { if(d.exists()) { document.getElementById('announcement-text').innerText = d.data().text; } });
+        }
+
+        function updateProfileUI() {
+            const u = window.appData.user;
+            if(u) {
+                document.getElementById('student-profile-link').classList.remove('hidden');
+                document.getElementById('nav-user-name').innerText = u.name;
+                document.getElementById('nav-user-initial').innerText = u.name.charAt(0);
+            }
+        }
+
+        // --- Database Exports ---
+        window.dbActions = {
+            add: (col, data) => addDoc(getCol(col), data),
+            update: (col, id, data) => updateDoc(getDocRef(col, id), data),
+            delete: (col, id) => deleteDoc(getDocRef(col, id)),
+            setAnnouncement: (text) => setDoc(getDocRef('config', 'broadcast'), { text })
+        };
+
+        // --- UI Core Exports ---
+        window.ui = {
+            showHome: () => { 
+                document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden')); 
+                document.getElementById('student-view').classList.remove('hidden');
+                document.getElementById('admin-view').classList.add('hidden');
+                document.getElementById('home-content').classList.remove('hidden'); 
+                window.ui.renderSubjects(); window.ui.renderLatestContent(); window.ui.renderLeaderboard(); window.ui.updateStats();
+            },
+            showAskPage: () => { document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden')); document.getElementById('ask-page').classList.remove('hidden'); },
+            showProfile: () => {
+                document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+                document.getElementById('student-profile').classList.remove('hidden');
+                const u = window.appData.user;
+                if(u) {
+                    document.getElementById('profile-name').innerText = u.name;
+                    document.getElementById('profile-phone').innerText = "رقم الهاتف: " + u.phone;
+                    document.getElementById('profile-initial').innerText = u.name.charAt(0);
+                    const myRes = window.appData.results.filter(r => r.studentName === u.name);
+                    document.getElementById('profile-exam-count').innerText = myRes.length;
+                    const avg = myRes.length ? Math.round(myRes.reduce((a, b) => a + (b.score/b.total), 0) / myRes.length * 100) : 0;
+                    document.getElementById('profile-avg-score').innerText = avg + "%";
+                }
+            },
+            scrollToSection: (id) => { window.ui.showHome(); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100); },
+            toggleDarkMode: () => { const h = document.documentElement; if (h.classList.contains('dark')) h.classList.remove('dark'); else h.classList.add('dark'); },
+            showLoginModal: () => { document.getElementById('login-modal').classList.remove('hidden'); document.getElementById('admin-pass').focus(); },
+            closeModal: (id) => document.getElementById(id).classList.add('hidden'),
+            logout: () => { document.getElementById('admin-view').classList.add('hidden'); window.ui.showHome(); },
+            login: () => { 
+                if(document.getElementById('admin-pass').value === "0358") { 
+                    document.getElementById('student-view').classList.add('hidden'); 
+                    document.getElementById('admin-view').classList.remove('hidden'); 
+                    document.getElementById('login-modal').classList.add('hidden'); 
+                    window.ui.switchAdminTab('materials'); window.ui.updateStats();
+                } else { document.getElementById('login-error').classList.remove('hidden'); }
+            },
+            switchAdminTab: (t) => {
+                document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.add('hidden'));
+                document.getElementById('tab-'+t)?.classList.remove('hidden');
+                document.querySelectorAll('.admin-sidebar nav button').forEach(b => b.classList.remove('active-tab-bg'));
+                document.getElementById(`tab-btn-${t}`)?.classList.add('active-tab-bg');
+            },
+            registerAccount: async () => {
+                const name = document.getElementById('reg-name').value.trim();
+                const phone = document.getElementById('reg-phone').value.trim();
+                if(name.split(/\s+/).length < 3) return alert("الاسم ثلاثي مطلوب.");
+                if(phone.length < 10) return alert("رقم هاتف غير صحيح.");
+                const p = { name, phone, uid: auth.currentUser.uid, joined: new Date().toISOString() };
+                await setDoc(getUserDoc(auth.currentUser.uid, 'profile', 'data'), p);
+                window.appData.user = p;
+                document.getElementById('register-modal').classList.add('hidden');
+                updateProfileUI(); window.ui.showHome();
+            },
+            updateStats: () => {
+                const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+                set('stat-sub-count', window.appData.subjects.length); set('stat-res-count', window.appData.results.length);
+                set('stat-subjects', window.appData.subjects.length); set('stat-results', window.appData.results.length);
+                let total = 0; window.appData.subjects.forEach(s => total += (s.courses ? s.courses.length : 0));
+                set('stat-contents', total);
+            },
+            renderSubjects: () => {
+                const g = document.getElementById('subjects-grid'); if(!g) return;
+                g.innerHTML = window.appData.subjects.map(s => `
+                    <div onclick="window.ui.viewSubject('${s.id}')" class="bg-white dark:bg-slate-900 p-14 rounded-[4.5rem] shadow-sm border border-slate-100 dark:border-slate-800 card-hover cursor-pointer text-center group relative overflow-hidden transition duration-500">
+                        <div class="w-32 h-32 bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-600 rounded-[3rem] flex items-center justify-center mx-auto mb-10 transition-all duration-700 shadow-xl group-hover:rotate-12 group-hover:scale-110"><i class="fas ${s.icon || 'fa-book-open'} text-blue-600 group-hover:text-white text-5xl"></i></div>
+                        <h3 class="font-black text-3xl italic underline decoration-transparent group-hover:decoration-blue-500 transition-all">${s.name}</h3>
+                        <p class="text-sm text-slate-400 mt-10 font-black bg-slate-50 dark:bg-slate-800 px-8 py-3 rounded-3xl inline-block italic">${s.courses ? s.courses.length : 0} فصول</p>
+                    </div>`).join('');
+                window.ui.updateStats();
+            },
+            renderLeaderboard: () => {
+                const g = document.getElementById('leaderboard-grid'); if(!g) return;
+                if(!window.appData.honored.length) { g.innerHTML = '<p class="col-span-full py-10 text-center italic text-slate-300 font-black text-2xl uppercase tracking-widest border-4 border-dashed rounded-[3rem] dark:border-slate-800">قائمة الشرف قيد التجهيز</p>'; return; }
+                g.innerHTML = window.appData.honored.map(r => `
+                    <div class="bg-white dark:bg-slate-900 p-12 rounded-[4rem] border-b-[20px] border-blue-600 text-center shadow-2xl transition hover:scale-105">
+                        <img src="${r.image || ''}" class="w-32 h-32 rounded-full mx-auto mb-8 border-8 border-white dark:border-slate-800 shadow-2xl object-cover italic">
+                        <h4 class="text-3xl font-black mb-4 italic tracking-tighter uppercase underline decoration-slate-100 dark:decoration-slate-800 decoration-8 underline-offset-12 tracking-widest font-black uppercase underline decoration-blue-50/10 font-black">${r.name}</h4>
+                        <p class="text-blue-600 font-black text-xl italic uppercase tracking-[0.2em] underline decoration-blue-100 underline-offset-4 font-black italic uppercase">${r.score}% - ${r.title}</p>
+                    </div>`).join('');
+            },
+            renderLatestContent: () => {
+                const g = document.getElementById('latest-content-grid'); if(!g) return;
+                let items = [];
+                window.appData.subjects.forEach(s => s.courses?.forEach(c => c.contents?.forEach(cnt => items.push({...cnt, subId: s.id, courId: c.id, subName: s.name}))));
+                items.sort((a,b) => b.id - a.id);
+                g.innerHTML = items.slice(0, 4).map(item => `
+                    <div onclick="window.openContent('${item.subId}', '${item.courId}', '${item.id}')" class="bg-white dark:bg-slate-900 p-10 rounded-[3.5rem] border border-slate-100 dark:border-slate-800 card-hover cursor-pointer border-r-[20px] border-r-blue-600 group shadow-lg text-right italic font-black uppercase underline decoration-slate-50/10">
+                        <div class="flex justify-between items-center mb-8"><i class="fas ${item.type === 'video' ? 'fa-play-circle text-red-500' : 'fa-file-alt text-blue-500'} text-2xl"></i><span class="text-[9px] font-black uppercase text-blue-500 italic bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">${item.type === 'exam' ? 'تحدي' : 'درس'}</span></div>
+                        <h4 class="font-black text-slate-800 dark:text-white text-2xl mb-8 truncate underline decoration-slate-100 dark:decoration-slate-800 decoration-8 underline-offset-8 italic uppercase tracking-widest font-black italic">${item.title}</h4>
+                    </div>`).join('');
+            },
+            viewSubject: (id) => {
+                const sub = window.appData.subjects.find(s => s.id === id); if(!sub) return;
+                document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+                document.getElementById('subject-details').classList.remove('hidden');
+                document.getElementById('subject-header').innerHTML = `<h2 class="text-7xl font-black text-blue-950 dark:text-blue-400 tracking-tighter uppercase italic underline decoration-blue-100 dark:decoration-blue-900 decoration-[24px] underline-offset-12 mb-10 text-center font-black uppercase italic">${sub.name}</h2>`;
+                document.getElementById('courses-grid').innerHTML = (!sub.courses || sub.courses.length === 0) ? '<p class="col-span-full py-40 text-center text-slate-200 font-black text-4xl italic border-8 border-dashed rounded-[6rem]">قيد التجهيز</p>' : sub.courses.map(c => `
+                    <div class="bg-white dark:bg-slate-900 rounded-[5rem] overflow-hidden border-2 border-slate-50 dark:border-slate-800 shadow-3xl flex flex-col h-full hover:shadow-blue-500/20 transition-all duration-700 group italic uppercase font-black uppercase italic underline decoration-slate-100/10 decoration-8 underline-offset-12">
+                        <div class="p-14 bg-slate-50 dark:bg-slate-800/80 border-b-8 border-white dark:border-slate-900 font-black text-4xl text-slate-950 dark:text-white italic uppercase group-hover:bg-blue-600 group-hover:text-white transition-all duration-700 font-black">${c.title}</div>
+                        <div class="p-14 space-y-10 flex-grow text-right font-black italic">
+                            ${(c.contents || []).map(cnt => `
+                                <div onclick="window.openContent('${id}', '${c.id}', '${cnt.id}')" class="flex justify-between items-center p-8 rounded-[3.5rem] bg-slate-50 dark:bg-slate-950/50 hover:bg-white dark:hover:bg-slate-900 cursor-pointer transition-all border-4 border-transparent hover:border-blue-100 dark:hover:border-blue-900 group/item active:scale-95 shadow-sm">
+                                    <div class="flex items-center gap-8 italic">
+                                        <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-[2rem] flex items-center justify-center shadow-xl italic"><i class="fas ${cnt.type === 'video' ? 'fa-circle-play text-blue-500' : 'fa-file-lines text-red-500'} text-3xl"></i></div>
+                                        <span class="font-black text-slate-800 dark:text-slate-300 text-3xl tracking-tighter italic uppercase underline decoration-transparent group-hover/item:decoration-blue-400 transition-all duration-500 italic uppercase">${cnt.title}</span>
+                                    </div>
+                                    <i class="fas fa-arrow-left text-blue-300 group-hover/item:text-blue-600 transition -translate-x-4 group-hover/item:translate-x-0 text-2xl font-black italic underline decoration-transparent"></i>
+                                </div>`).join('')}
+                        </div>
+                    </div>`).join('');
+                window.scrollTo(0,0);
+            },
+            renderAdminMaterials: () => {
+                const l = document.getElementById('admin-materials-container'); if(!l) return;
+                l.innerHTML = window.appData.subjects.map(sub => `
+                    <div class="bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-800 rounded-[5rem] overflow-hidden shadow-3xl relative group mb-10 text-right font-black italic uppercase underline decoration-slate-50/10 decoration-8 underline-offset-8 font-black italic uppercase tracking-widest">
+                        <div class="p-12 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center border-b-4 dark:border-slate-800 gap-10 text-right uppercase">
+                            <div class="flex items-center gap-8 italic font-black uppercase">
+                                <div class="w-24 h-24 bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl flex items-center justify-center text-blue-600 text-5xl border dark:border-slate-800 group-hover:rotate-12 transition duration-500 shadow-xl border-white uppercase"><i class="fas ${sub.icon || 'fa-book-reader'}"></i></div>
+                                <h3 class="font-black text-5xl italic uppercase tracking-widest font-black uppercase">${sub.name}</h3>
+                            </div>
+                            <div class="flex gap-8 italic font-black uppercase tracking-widest">
+                                <button onclick="window.ui.openAddCourseModal('${sub.id}')" class="bg-slate-900 dark:bg-blue-600 text-white px-12 py-5 rounded-[2rem] font-black text-2xl shadow-3xl active:scale-95 transition tracking-widest italic uppercase">+ إضافة فصل</button>
+                                <button onclick="window.dbActions.delete('subjects', '${sub.id}')" class="text-slate-300 hover:text-red-600 transition text-5xl p-6 italic font-black">✕</button>
+                            </div>
+                        </div>
+                        <div class="p-20 space-y-20 font-black italic underline decoration-transparent">
+                            ${(sub.courses || []).map(c => `
+                                <div class="border-8 border-dashed border-slate-100 dark:border-slate-800 rounded-[5rem] p-16 bg-slate-50/20 relative shadow-inner italic font-black uppercase underline decoration-slate-100/10 decoration-8 underline-offset-12 font-black italic font-black">
+                                    <div class="flex flex-col sm:flex-row justify-between items-center mb-16 border-b-4 pb-10 border-white dark:border-slate-800 gap-8 uppercase tracking-widest italic font-black text-right italic font-black">
+                                        <span class="font-black text-blue-900 dark:text-blue-400 text-4xl italic tracking-tighter uppercase underline underline-offset-[16px] italic uppercase tracking-widest font-black">${c.title}</span>
+                                        <div class="flex gap-6 italic font-black uppercase tracking-widest italic font-black">
+                                            <button onclick="window.ui.openAddContentModal('${sub.id}', '${c.id}')" class="bg-blue-600 text-white px-10 py-4 rounded-[2rem] font-black text-lg hover:bg-black transition shadow-2xl uppercase italic font-black underline decoration-white/10 decoration-4 font-black tracking-tighter">+ محتوى</button>
+                                            <button onclick="window.ui.deleteCourse('${sub.id}', '${c.id}')" class="bg-red-50 dark:bg-red-900/30 text-red-500 px-8 py-4 rounded-[2rem] font-black transition italic uppercase underline underline-offset-8 decoration-red-100/10 italic">حذف الفصل</button>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-12 text-right uppercase tracking-widest font-black italic underline decoration-transparent uppercase font-black italic font-black">
+                                        ${(c.contents || []).map(cnt => `<div class="bg-white dark:bg-slate-950 p-10 rounded-[3.5rem] border-4 border-slate-100 dark:border-slate-800 flex justify-between items-center shadow-3xl group/cnt italic font-black uppercase underline decoration-transparent font-black"><span class="font-black text-3xl text-slate-700 dark:text-slate-300 italic tracking-tighter group-hover/cnt:text-blue-600 transition-colors uppercase italic uppercase font-black italic tracking-widest italic font-black underline decoration-transparent italic uppercase tracking-widest italic font-black">${cnt.title}</span><button onclick="window.ui.deleteContent('${sub.id}', '${c.id}', '${cnt.id}')" class="text-slate-200 hover:text-red-500 transition text-4xl p-4 italic font-black shadow-inner italic font-black italic font-black">✕</button></div>`).join('')}
+                                    </div>
+                                </div>`).join('')}
+                        </div>
+                    </div>`).join('');
+                window.ui.updateStats();
+            },
+            renderAdminQuestions: () => {
+                const l = document.getElementById('admin-questions-list'); if(!l) return;
+                l.innerHTML = window.appData.questions.map(q => `
+                    <div class="bg-white dark:bg-slate-900 p-16 rounded-[4rem] border-2 dark:border-slate-800 shadow-3xl text-right">
+                        <div class="flex-grow space-y-8 font-black underline decoration-transparent">
+                            <div class="text-xs text-blue-500 italic tracking-widest bg-blue-50 dark:bg-blue-900/20 px-6 py-2 rounded-full inline-block uppercase font-black">${q.date}</div>
+                            <p class="font-black text-4xl text-slate-800 dark:text-white leading-tight italic tracking-tighter uppercase underline decoration-blue-100 dark:decoration-blue-900 decoration-8 underline-offset-12">${q.text || "استفسار وسائط"}</p>
+                            ${q.audio ? `<div class="bg-blue-50 dark:bg-slate-800 p-10 rounded-[3rem] border border-blue-100 dark:border-slate-700"><audio controls src="${q.audio}" class="h-12 w-full"></audio></div>` : ''}
+                        </div>
+                        ${q.image ? `<img src="${q.image}" class="w-64 h-48 object-cover rounded-[3.5rem] border-[15px] border-slate-50 dark:border-slate-800 shadow-3xl mt-8">` : ''}
+                        <button onclick="window.dbActions.delete('questions', '${q.id}')" class="text-red-500 font-black border-4 border-red-50 px-12 py-5 rounded-[2rem] hover:bg-red-500 hover:text-white transition shadow-xl mt-10 uppercase italic">حذف الطلب</button>
+                    </div>`).join('');
+            },
+            renderAdminResults: () => {
+                const l = document.getElementById('admin-results-list'); if(!l) return;
+                l.innerHTML = window.appData.results.map(r => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b dark:border-slate-800 font-black italic">
+                        <td class="p-10 font-black text-slate-800 dark:text-white text-3xl italic underline decoration-slate-100">${r.studentName}</td>
+                        <td class="p-10 font-bold text-blue-600 text-xl italic">${r.examTitle}</td>
+                        <td class="p-10 text-center italic font-black"><span class="${r.score/r.total >= 0.5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-12 py-4 rounded-[2rem] font-black text-4xl shadow-2xl border-8 border-white dark:border-slate-800 font-black">${r.score} / ${r.total}</span></td>
+                        <td class="p-10 text-sm text-slate-400 italic">${r.date}</td>
+                        <td class="p-10 text-center italic font-black"><button onclick="window.dbActions.delete('results', '${r.id}')" class="text-red-400 hover:text-red-600 transition text-4xl p-6 italic font-black">✕</button></td>
+                    </tr>`).join('');
+                window.ui.updateStats();
+            },
+            renderAdminHonored: () => {
+                const l = document.getElementById('admin-honored-list'); if(!l) return;
+                l.innerHTML = window.appData.honored.map(h => `
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border flex items-center gap-6 shadow-xl dark:border-slate-800 text-right italic font-black uppercase tracking-widest underline decoration-slate-50/10 decoration-8 underline-offset-8">
+                        <img src="${h.image || ''}" class="w-24 h-24 rounded-full object-cover">
+                        <div class="flex-grow">
+                            <h4 class="font-black text-2xl italic">${h.name}</h4>
+                            <p class="text-blue-500 font-bold italic underline decoration-blue-100 uppercase">${h.score}% - ${h.title}</p>
+                        </div>
+                        <button onclick="window.dbActions.delete('honored', '${h.id}')" class="text-red-500 text-2xl p-4 transition italic font-black">✕</button>
+                    </div>`).join('');
+            },
+            handleSearch: (term) => {
+                const b = document.getElementById('search-results'); if(!term) { b.classList.add('hidden'); return; }
+                let res = [];
+                window.appData.subjects.forEach(s => {
+                    if(s.name.includes(term)) res.push({ t: 'مادة', n: s.name, f: `window.ui.viewSubject('${s.id}')` });
+                    s.courses?.forEach(c => {
+                        if(c.title.includes(term)) res.push({ t: 'فصل', n: c.title, f: `window.ui.viewSubject('${s.id}')` });
+                        c.contents?.forEach(cnt => { if(cnt.title.includes(term)) res.push({ t: 'درس', n: cnt.title, f: `window.openContent('${s.id}', '${c.id}', '${cnt.id}')` }); });
+                    });
+                });
+                b.innerHTML = res.length ? res.map(r => `<div onclick="${r.f}; document.getElementById('search-results').classList.add('hidden')" class="p-8 border-b dark:border-slate-800 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex justify-between items-center font-black italic"><span>${r.n}</span><span class="text-xs bg-blue-600 text-white px-4 py-1 rounded-full uppercase underline">${r.t}</span></div>`).join('') : '<p class="p-10 text-center italic text-slate-400">لا نتائج</p>';
+                b.classList.remove('hidden');
+            },
+            toggleRecording: async () => {
+                const i = document.getElementById('record-icon'); const b = document.getElementById('record-btn');
+                if(!isRecording) { try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(s); audioChunks = []; mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data); mediaRecorder.onstop = () => { audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); document.getElementById('record-preview').src = URL.createObjectURL(audioBlob); document.getElementById('record-preview-box').classList.remove('hidden'); }; mediaRecorder.start(); isRecording = true; i.className = 'fas fa-stop text-4xl'; b.classList.add('recording-pulse', 'bg-red-600'); } catch(e) { alert("الميكروفون مطلوب."); } }
+                else { mediaRecorder.stop(); isRecording = false; i.className = 'fas fa-microphone text-4xl'; b.classList.remove('recording-pulse', 'bg-red-600'); }
+            },
+            clearRecording: () => { audioBlob = null; document.getElementById('record-preview-box').classList.add('hidden'); },
+            submitQuestion: async () => {
+                const t = document.getElementById('ask-text').value; const file = document.getElementById('ask-image-file').files[0];
+                let img = null; if(file) img = await readFile(file);
+                let aud = null; if(audioBlob) aud = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(audioBlob); });
+                if(!t && !img && !aud) return alert("البيانات ناقصة");
+                await window.dbActions.add('questions', { text: t, image: img, audio: aud, date: new Date().toLocaleString('ar-EG') });
+                document.getElementById('ask-text').value = ''; document.getElementById('ask-image-file').value = ''; window.ui.clearRecording();
+                document.getElementById('ask-success').classList.remove('hidden'); setTimeout(()=> { document.getElementById('ask-success').classList.add('hidden'); window.ui.showHome(); }, 3000);
+            },
+            openAddHonoredModal: () => {
+                const m = document.getElementById('content-modal'); const f = document.getElementById('content-form');
+                document.getElementById('modal-title').innerText = "تكريم طالب جديد";
+                f.innerHTML = `<div class="space-y-10 text-right italic font-black uppercase underline decoration-transparent"><div><label>الاسم المتميز</label><input type="text" id="hon-name" class="w-full p-6 border-4 dark:border-slate-800 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950 font-black italic"></div><div><label>النسبة</label><input type="text" id="hon-score" class="w-full p-6 border-4 dark:border-slate-800 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950 font-black italic" placeholder="100"></div><div><label>الاختبار</label><input type="text" id="hon-title" class="w-full p-6 border-4 dark:border-slate-800 rounded-[2.5rem] bg-slate-50 dark:bg-slate-950 font-black italic"></div><div><label>رفع صورة</label><input type="file" id="hon-file" accept="image/*" class="w-full p-6 border-4 dark:border-slate-800 bg-white rounded-[3rem] font-black italic"></div></div>`;
+                document.getElementById('modal-save-btn').onclick = async () => {
+                    const n = document.getElementById('hon-name').value; const s = document.getElementById('hon-score').value;
+                    const t = document.getElementById('hon-title').value; const file = document.getElementById('hon-file').files[0];
+                    let img = null; if(file) img = await readFile(file);
+                    if(n && s) { await window.dbActions.add('honored', { name: n, score: s, title: t, image: img }); window.ui.closeModal('content-modal'); }
+                };
+                m.classList.remove('hidden');
+            },
+            openAddSubjectModal: () => {
+                const m = document.getElementById('content-modal'); const f = document.getElementById('content-form');
+                document.getElementById('modal-title').innerText = "مادة جديدة";
+                f.innerHTML = `<div class="text-right italic font-black uppercase underline decoration-transparent"><label class="block mb-10 text-3xl underline decoration-blue-100 decoration-8 font-black uppercase">اسم المادة الأكاديمي</label><input type="text" id="subj-name" class="w-full p-10 border-8 border-slate-50 dark:border-slate-800 rounded-[3.5rem] outline-none font-black text-5xl shadow-inner bg-slate-50 dark:bg-slate-950 focus:bg-white focus:border-blue-500 transition uppercase italic font-black"></div>`;
+                document.getElementById('modal-save-btn').onclick = async () => {
+                    const n = document.getElementById('subj-name').value; if(n) { await window.dbActions.add('subjects', { name: n, icon: "fa-book-open", courses: [] }); window.ui.closeModal('content-modal'); }
+                };
+                m.classList.remove('hidden');
+            },
+            openAddCourseModal: (sid) => {
+                const m = document.getElementById('content-modal'); const f = document.getElementById('content-form');
+                document.getElementById('modal-title').innerText = "إضافة فصل جديد";
+                f.innerHTML = `<div class="text-right italic font-black underline decoration-transparent"><label class="block mb-10 text-3xl underline decoration-blue-100 decoration-8 font-black uppercase italic tracking-widest">عنوان الفصل الدراسي</label><input type="text" id="cour-title" class="w-full p-10 border-8 border-slate-50 dark:border-slate-800 rounded-[3.5rem] outline-none font-black text-5xl shadow-inner bg-slate-50 dark:bg-slate-950 focus:bg-white focus:border-blue-500 transition italic font-black"></div>`;
+                document.getElementById('modal-save-btn').onclick = async () => {
+                    const t = document.getElementById('cour-title').value; if(t) { const s = window.appData.subjects.find(x => x.id === sid); const crs = s.courses || []; crs.push({ id: Date.now().toString(), title: t, contents: [] }); await window.dbActions.update('subjects', sid, { courses: crs }); window.ui.closeModal('content-modal'); }
+                };
+                m.classList.remove('hidden');
+            },
+            openAddContentModal: (sid, cid) => {
+                const m = document.getElementById('content-modal'); const f = document.getElementById('content-form');
+                document.getElementById('modal-title').innerText = "إضافة محتوى / اختبار";
+                f.innerHTML = `<div class="space-y-16 text-right font-black italic"><div class="grid grid-cols-1 md:grid-cols-2 gap-16 italic font-black"><div><label class="block mb-6 text-2xl uppercase underline decoration-blue-100 font-black italic uppercase">نوع المحتوى</label><select id="cont-type" onchange="window.toggleInModal()" class="w-full p-8 border-4 dark:border-slate-800 rounded-[2.5rem] font-black bg-slate-50 dark:bg-slate-800 text-right"><option value="video">فيديو تفاعلي</option><option value="file">ملزمة PDF</option><option value="exam">اختبار (HTML/JSON)</option></select></div><div><label class="block mb-6 text-2xl underline decoration-blue-100 font-black italic uppercase underline decoration-transparent">العنوان</label><input type="text" id="cont-title" class="w-full p-8 border-4 dark:border-slate-800 rounded-[2.5rem] font-black text-4xl bg-slate-50 dark:bg-slate-800 italic uppercase underline decoration-transparent font-black"></div></div><div id="url-box-modal"><label class="block mb-6 text-blue-600 text-2xl uppercase font-black underline decoration-blue-100 italic font-black">رابط الـ Embed</label><input type="text" id="cont-url" class="w-full p-8 border-4 dark:border-slate-800 rounded-[2.5rem] shadow-inner dark:bg-slate-800 font-bold italic uppercase font-black italic"></div><div id="exam-box-modal" class="hidden space-y-16"><label class="block mb-6 text-purple-600 text-2xl underline decoration-purple-100 font-black italic tracking-widest">بناء الاختبار:</label><select id="exam-lang-modal" onchange="window.setExTemplate()" class="w-full p-8 border-4 dark:border-slate-800 rounded-[2.5rem] font-black bg-slate-50 dark:bg-slate-800 text-2xl"><option value="json">JSON</option><option value="html">HTML</option></select><textarea id="cont-code" class="w-full p-14 border-4 dark:border-slate-800 rounded-[5rem] h-[30rem] font-mono text-xl shadow-inner bg-slate-50 dark:bg-slate-950 transition uppercase font-black italic underline decoration-transparent font-black"></textarea></div></div>`;
+                window.toggleInModal = () => { const t = document.getElementById('cont-type').value; document.getElementById('url-box-modal').classList.toggle('hidden', t === 'exam'); document.getElementById('exam-box-modal').classList.toggle('hidden', t !== 'exam'); };
+                window.setExTemplate = () => { const l = document.getElementById('exam-lang-modal').value; const tps = { json: '{\n  "questions": [\n    {\n      "question": "سؤال؟",\n      "options": ["خيار 1", "خيار 2"],\n      "answer": 0\n    }\n  ]\n}', html: '<!DOCTYPE html><html><body style="text-align:center; padding:50px; background:#f0f9ff; font-family:Arial;"><h1 style="color:#1e40af;">تحدي</h1><button onclick="alert(\'ممتاز\')" style="padding:20px 40px; background:#3b82f6; color:white; border:none; border-radius:20px;">ابدأ</button></body></html>' }; document.getElementById('cont-code').value = tps[l] || ""; };
+                window.setExTemplate();
+                document.getElementById('modal-save-btn').onclick = async () => {
+                    const sub = window.appData.subjects.find(s => s.id === sid); const course = sub.courses.find(c => c.id === cid);
+                    const type = document.getElementById('cont-type').value; const title = document.getElementById('cont-title').value; if(!title) return;
+                    course.contents.push({ id: Date.now().toString(), type, title, url: document.getElementById('cont-url').value, examType: document.getElementById('exam-lang-modal')?.value, data: document.getElementById('cont-code')?.value });
+                    await window.dbActions.update('subjects', sid, { courses: sub.courses }); window.ui.closeModal('content-modal');
+                };
+                m.classList.remove('hidden');
+            },
+            deleteCourse: async (sid, cid) => { if(!confirm('حذف الفصل؟')) return; const s = window.appData.subjects.find(n => n.id === sid); const crs = s.courses.filter(n => n.id !== cid); await window.dbActions.update('subjects', sid, { courses: crs }); },
+            deleteContent: async (sid, cid, nid) => { if(!confirm('حذف المحتوى؟')) return; const s = window.appData.subjects.find(n => n.id === sid); const crs = s.courses.map(x => { if(x.id === cid) x.contents = x.contents.filter(z => z.id !== nid); return x; }); await window.dbActions.update('subjects', sid, { courses: crs }); },
+            confirmStartExam: () => {
+                const n = document.getElementById('student-name-input').value.trim();
+                if(n.split(/\s+/).length < 2) return alert("الاسم ثنائي مطلوب.");
+                document.getElementById('name-modal').classList.add('hidden');
+                window.currentItem.studentName = n;
+                window.launchActualViewerFromOutside(window.currentItem);
+            }
+        };
+
     </script>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
-        body { font-family: 'Tajawal', sans-serif; background-color: #F8FAFC; }
-        .section-view { display: none; }
-        .section-view.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .status-online { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
-        .status-offline { background-color: #94a3b8; }
-        iframe { width: 100%; height: 100%; border-radius: 1.5rem; }
-    </style>
-</head>
-<body class="text-slate-800 overflow-x-hidden">
-
-    <div id="toast" class="fixed bottom-10 right-1/2 translate-x-1/2 z-[1000] bg-slate-900 text-white px-8 py-3 rounded-full shadow-2xl flex items-center gap-3 opacity-0 pointer-events-none transition-all duration-300 border border-slate-700">
-        <i data-lucide="check-circle" class="text-green-400 w-5 h-5"></i>
-        <span id="toast-text" class="text-sm font-bold"></span>
-    </div>
-
-    <nav class="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-[100] h-16 flex items-center justify-between px-6 shadow-sm">
-        <div class="flex items-center gap-6">
-            <div onclick="navigateTo('dashboard')" class="flex items-center gap-2 cursor-pointer group">
-                <div class="bg-blue-600 p-1.5 rounded-lg shadow-lg group-hover:rotate-6 transition-transform">
-                    <i data-lucide="graduation-cap" class="text-white w-5 h-5"></i>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-2xl font-black text-slate-900 tracking-tighter italic leading-none">elkhatta</span>
-                    <div class="flex items-center mt-1">
-                        <span id="connection-dot" class="status-dot status-offline"></span>
-                        <span id="connection-text" class="text-[9px] font-bold text-slate-400 uppercase text-right">Offline</span>
-                    </div>
-                </div>
-            </div>
-            <div class="hidden md:flex gap-6">
-                <button onclick="navigateTo('dashboard')" class="nav-btn text-sm font-black text-blue-600" id="btn-nav-dashboard">الرئيسية</button>
-                <button onclick="navigateTo('support')" class="nav-btn text-sm font-black text-slate-400 hover:text-blue-600 transition-colors" id="btn-nav-support">أسئلتي</button>
-            </div>
-        </div>
-        <div onclick="openAdminLogin()" class="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white transition-all cursor-pointer shadow-sm">
-            <i data-lucide="lock" class="w-5 h-5"></i>
-        </div>
-    </nav>
-
-    <main class="max-w-5xl mx-auto px-4 py-8 min-h-[80vh]">
-        
-        <section id="view-dashboard" class="section-view active space-y-12 text-right">
-            <header class="bg-gradient-to-br from-blue-700 via-indigo-700 to-indigo-900 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
-                <div class="relative z-10">
-                    <h1 class="text-4xl md:text-6xl font-black mb-6 leading-tight">بوابتك للتميز <br/> في الخدمة الاجتماعية 🚀</h1>
-                    <p class="opacity-80 text-lg mb-10 max-w-md leading-relaxed">المحاضرات والاختبارات التفاعلية بروابط Google Drive و YouTube سريعة ومجانية.</p>
-                    <button onclick="document.getElementById('subjects-sec').scrollIntoView({behavior:'smooth'})" class="bg-white text-blue-800 px-10 py-4 rounded-[1.5rem] font-black shadow-xl hover:scale-105 transition-all">استعرض الكورسات</button>
-                </div>
-                <div class="absolute -left-10 -bottom-10 w-80 h-80 bg-white/10 rounded-full blur-[100px]"></div>
-            </header>
-
-            <div id="latest-sec">
-                <div class="flex items-center gap-3 mb-8 px-2">
-                    <div class="h-8 w-1.5 bg-orange-500 rounded-full shadow-lg"></div>
-                    <h2 class="text-2xl font-black text-gray-800 tracking-tighter">أحدث الإضافات</h2>
-                </div>
-                <div id="latest-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade text-right"></div>
-            </div>
-
-            <div id="subjects-sec">
-                <div class="flex items-center gap-3 mb-8 px-2">
-                    <div class="h-8 w-1.5 bg-blue-600 rounded-full shadow-lg"></div>
-                    <h2 class="text-2xl font-black text-gray-800 text-right">المواد الدراسية (الكورسات)</h2>
-                </div>
-                <div id="subjects-list" class="grid sm:grid-cols-2 gap-8 text-right"></div>
-            </div>
-        </section>
-
-        <section id="view-subject" class="section-view space-y-8 text-right">
-            <div class="flex items-center justify-between">
-                <button onclick="navigateTo('dashboard')" class="flex items-center gap-2 text-blue-600 font-bold hover:gap-4 transition-all text-right">
-                    <i data-lucide="arrow-right" class="rotate-180 w-5 h-5 text-right"></i> الرئيسية
-                </button>
-                <h1 id="subj-title-display" class="text-3xl font-black text-gray-800"></h1>
-            </div>
-            <div id="lec-list-display" class="grid gap-4"></div>
-        </section>
-
-        <section id="view-lecture" class="section-view space-y-8 text-right">
-            <div class="flex items-center justify-between">
-                <button id="back-btn-action" class="flex items-center gap-2 text-blue-600 font-bold hover:gap-4 transition-all">
-                    <i data-lucide="arrow-right" class="rotate-180 w-5 h-5"></i> رجوع للمادة
-                </button>
-                <h1 id="lec-title-display" class="text-2xl font-black text-gray-800 tracking-tighter"></h1>
-            </div>
-            <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 text-center">
-                <div id="video-box" class="w-full aspect-video bg-slate-900 flex items-center justify-center relative">
-                </div>
-                <div class="p-10 flex flex-wrap gap-4 justify-center items-center">
-                    <button id="lec-pdf-btn" class="flex-1 min-w-[240px] bg-red-50 text-red-600 py-5 rounded-3xl font-black flex items-center justify-center gap-3 border border-red-100 hover:bg-red-100 transition-all shadow-sm">
-                        <i data-lucide="file-text" class="w-6 h-6"></i> عرض الملزمة (Drive)
-                    </button>
-                    <button id="lec-exam-btn" class="flex-1 min-w-[240px] bg-purple-600 text-white py-5 rounded-3xl font-black flex items-center justify-center gap-3 shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all">
-                        <i data-lucide="clipboard-check" class="w-6 h-6"></i> بدء اختبار المحاضرة
-                    </button>
-                </div>
-            </div>
-            <button onclick="navigateTo('dashboard')" class="w-full py-5 text-slate-400 font-bold hover:text-slate-600 underline text-center">رجوع للرئيسية</button>
-        </section>
-
-        <section id="view-exam" class="section-view max-w-2xl mx-auto py-10 animate-fade text-right">
-            <div id="exam-container" class="bg-white p-10 rounded-[3.5rem] shadow-2xl border border-blue-50 text-right"></div>
-        </section>
-
-        <section id="view-support" class="section-view space-y-12 text-right">
-            <div class="bg-white p-12 rounded-[3.5rem] shadow-lg text-center border border-indigo-50">
-                <i data-lucide="message-circle" class="w-12 h-12 text-indigo-600 mx-auto mb-4"></i>
-                <h2 class="text-2xl font-black text-gray-800 mb-2 tracking-tighter text-right">كيف يمكننا مساعدتك؟</h2>
-                <textarea id="support-input" class="w-full p-6 bg-slate-50 rounded-[2rem] border-none mb-6 min-h-[150px] text-lg focus:ring-4 focus:ring-indigo-100 shadow-inner text-right" placeholder="اكتب سؤالك هنا..."></textarea>
-                <button onclick="sendMsg()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-xl">إرسال السؤال</button>
-            </div>
-            <div id="messages-display" class="space-y-6"></div>
-        </section>
-
-        <section id="view-admin" class="section-view space-y-8 text-right">
-            <div class="flex bg-white p-2 rounded-2xl shadow-sm gap-2 overflow-x-auto border border-slate-100">
-                <button id="adm-tab-subjects" onclick="renderAdmin('subjects')" class="adm-tab flex-1 px-6 py-3 rounded-xl font-black transition-all text-right">المواد الدراسية</button>
-                <button id="adm-tab-lectures" onclick="renderAdmin('lectures')" class="adm-tab flex-1 px-6 py-3 rounded-xl font-black transition-all text-right">إضافة درس (بالرابط)</button>
-                <button id="adm-tab-exams" onclick="renderAdmin('exams')" class="adm-tab flex-1 px-6 py-3 rounded-xl font-black transition-all text-right">بنك الامتحانات</button>
-                <button id="adm-tab-msgs" onclick="renderAdmin('msgs')" class="adm-tab flex-1 px-6 py-3 rounded-xl font-black transition-all text-right">الرسائل</button>
-            </div>
-            <div id="admin-render-area" class="space-y-6 animate-fade"></div>
-        </section>
-    </main>
-
-    <div id="login-modal" class="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-md hidden items-center justify-center p-4 text-right">
-        <div class="bg-white p-12 rounded-[3.5rem] w-full max-w-sm shadow-2xl text-center animate-fade">
-            <h2 class="text-3xl font-black mb-8 text-gray-800 tracking-tighter">دخول الإدارة</h2>
-            <input type="password" id="pass-field" placeholder="كلمة المرور" class="w-full p-5 bg-slate-50 rounded-2xl text-center font-black tracking-widest text-2xl border-none focus:ring-4 focus:ring-blue-100 mb-6 shadow-inner">
-            <button onclick="checkPass()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all">دخول</button>
-            <button onclick="closeAdminLogin()" class="mt-4 text-slate-400 font-bold text-center">إلغاء</button>
-        </div>
-    </div>
-
-    <div class="md:hidden fixed bottom-6 left-6 right-6 bg-white/90 backdrop-blur-xl border border-slate-100 p-4 flex justify-around items-center rounded-[2rem] shadow-2xl z-[40]">
-        <button onclick="navigateTo('dashboard')" class="p-3 rounded-2xl transition-all" id="mob-dashboard"><i data-lucide="layout"></i></button>
-        <button onclick="navigateTo('support')" class="p-3 rounded-2xl transition-all text-slate-400" id="mob-support"><i data-lucide="message-circle"></i></button>
-    </div>
-
-    <footer class="py-16 text-center text-slate-400 border-t border-slate-50 bg-white mt-20 text-center">
-        <p class="font-bold text-sm italic tracking-widest text-center">elkhatta Educational Platform © 2024</p>
-    </footer>
-
     <script>
-        let appData = { subjects: [], lectures: [], exams: [], messages: [], currentAdminTab: 'subjects' };
-        let activeExamData = null, examIdx = 0, examScore = 0;
-        const SOCIAL_WORK_SUBJECTS = ["نماذج العمل مع أفراد", "نماذج العمل مع جماعات", "نماذج العمل مع مجتمعات", "دفاع الاجتماعي", "البحث الاجتماعي", "تنمية المجتمعات", "تقويم البرامج و مشروعات", "تدريب الميداني"];
-
-        function convertToEmbed(url) {
-            if (!url) return "";
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-                return `https://www.youtube.com/embed/${id}`;
-            }
-            if (url.includes('drive.google.com')) {
-                const id = url.match(/\/d\/([^\/]+)/)?.[1];
-                return `https://drive.google.com/file/d/${id}/preview`;
-            }
-            return url;
-        }
-
-        window.updateConnectionStatus = (online) => {
-            const dot = document.getElementById('connection-dot');
-            const text = document.getElementById('connection-text');
-            if(online) {
-                dot.className = "status-dot status-online";
-                text.innerText = "Online";
-                text.classList.replace('text-slate-400', 'text-green-500');
-            } else {
-                dot.className = "status-dot status-offline";
-                text.innerText = "Disconnected";
-                text.classList.replace('text-green-500', 'text-slate-400');
+        // --- Shared Logic For Modal Integration & Navigation ---
+        window.openContent = (sid, cid, nid) => {
+            const sub = window.appData.subjects.find(s => s.id === sid);
+            const cour = sub.courses.find(c => c.id === cid);
+            const item = cour.contents.find(n => n.id === nid);
+            window.currentItem = { ...item, sid, cid };
+            if(item.type === 'exam') {
+                document.getElementById('student-name-input').value = '';
+                document.getElementById('name-modal').classList.remove('hidden');
+                document.getElementById('student-name-input').focus();
+            } else { 
+                window.launchActualViewerFromOutside(item);
             }
         };
 
-        function navigateTo(id) {
-            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
-            const target = document.getElementById(`view-${id}`);
-            if(target) target.classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-blue-600', 'text-slate-400'));
-            const activeBtn = document.getElementById(`btn-nav-${id}`);
-            if(activeBtn) activeBtn.classList.replace('text-slate-400', 'text-blue-600');
-            if(id === 'dashboard') renderDashboard();
-            if(id === 'support') renderSupport();
-            lucide.createIcons();
-            window.scrollTo(0,0);
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = msg;
-            t.classList.add('opacity-100', 'translate-y-[-10px]');
-            setTimeout(() => t.classList.remove('opacity-100', 'translate-y-[-10px]'), 3000);
-        }
-
-        function openAdminLogin() { document.getElementById('login-modal').style.display = 'flex'; }
-        function closeAdminLogin() { document.getElementById('login-modal').style.display = 'none'; }
-        function checkPass() {
-            if(document.getElementById('pass-field').value === '2005') {
-                closeAdminLogin();
-                navigateTo('admin');
-                renderAdmin('subjects');
-            } else { showToast("كلمة السر خطأ"); }
-        }
-
-        window.startApp = () => {
-            const sync = (colName, key) => {
-                window.fb.onSnapshot(window.fb.getCol(colName), (s) => {
-                    appData[key] = s.docs.map(d => ({id: d.id, ...d.data()}));
-                    refreshCurrent();
-                });
-            };
-            sync('subjects', 'subjects');
-            sync('lectures', 'lectures');
-            sync('exams', 'exams');
-            sync('messages', 'messages');
+        window.launchActualViewerFromOutside = (item) => {
+            const v = document.getElementById('content-viewer'); const b = document.getElementById('viewer-body');
+            document.getElementById('viewer-title-text').innerText = item.title;
+            v.classList.remove('hidden'); b.innerHTML = '';
+            if(item.type === 'video') {
+                b.innerHTML = `<div class="aspect-video bg-black shadow-2xl h-full w-full"><iframe src="${item.url}" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div><div class="p-24 text-right italic font-black uppercase"><h4 class="text-7xl font-black text-slate-900 dark:text-white italic underline decoration-blue-200 decoration-[20px] underline-offset-[32px] mb-20 uppercase tracking-widest leading-tight italic uppercase tracking-widest font-black">${item.title}</h4></div>`;
+            } else if(item.type === 'file') {
+                b.innerHTML = `<iframe src="${item.url}" class="w-full h-[85vh] rounded-b-[4rem]" frameborder="0"></iframe>`;
+            } else if(item.type === 'exam') {
+                if(item.examType === 'html') {
+                    const f = document.createElement('iframe'); f.className = "exam-frame";
+                    b.appendChild(f); f.contentWindow.document.open(); f.contentWindow.document.write(item.data); f.contentWindow.document.close();
+                } else {
+                    try {
+                        const ex = JSON.parse(item.data);
+                        b.innerHTML = `<div class="p-24 bg-white dark:bg-slate-950 text-right italic font-black" id="exam-render-area-ext"><div class="flex justify-between items-center mb-16 border-b pb-8"><div><h2 class="text-5xl font-black italic uppercase tracking-widest underline decoration-blue-100">${item.title}</h2><p class="text-slate-400">تقييم المستوى - ELKHATTA</p></div><div class="bg-blue-600 text-white px-8 py-3 rounded-full font-black">${item.studentName}</div></div><div class="space-y-16"> ${ex.questions.map((q, i) => `<div class="p-12 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border q-container" data-idx="${i}"><p class="text-4xl mb-10 font-black italic">س${i+1}: ${q.question}</p><div class="grid grid-cols-1 md:grid-cols-2 gap-6"> ${q.options.map((opt, optIdx) => `<label class="p-8 bg-white dark:bg-slate-900 rounded-3xl border cursor-pointer hover:border-blue-500 font-black text-3xl"><input type="radio" name="e_q_ext_${i}" value="${optIdx}" class="w-8 h-8 ml-4 accent-blue-600 italic"> ${opt}</label>`).join('')} </div></div>`).join('')} </div><button onclick="window.calculateExamScoreOutside()" class="w-full mt-20 bg-green-600 text-white py-10 rounded-[3rem] font-black text-5xl shadow-3xl transform active:scale-95 italic transition">تسليم التحدي</button></div>`;
+                    } catch(e) { b.innerHTML = "خطأ في تحميل الامتحان."; }
+                }
+            }
         };
 
-        function refreshCurrent() {
-            const active = document.querySelector('.section-view.active');
-            if(!active) return;
-            if(active.id === 'view-dashboard') renderDashboard();
-            if(active.id === 'view-support') renderSupport();
-            if(active.id === 'view-admin') renderAdmin(appData.currentAdminTab);
-        }
-
-        function renderDashboard() {
-            const combined = [
-                ...appData.lectures.map(l => ({...l, type: 'lecture'})),
-                ...appData.exams.filter(e => !appData.lectures.some(l => l.examId === e.id)).map(e => ({...e, type: 'exam'}))
-            ].sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 6);
-
-            document.getElementById('latest-list').innerHTML = combined.map(item => `
-                <div onclick="${item.type === 'lecture' ? `openLecture('${item.id}')` : `startStandaloneExam('${item.id}')`}" class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-50 flex items-center gap-4 cursor-pointer hover:shadow-xl transition-all group text-right">
-                    <div class="h-14 w-14 ${item.type === 'lecture' ? 'bg-orange-50 text-orange-600' : 'bg-purple-50 text-purple-600'} rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm shadow-orange-100">
-                        <i data-lucide="${item.type === 'lecture' ? 'play-circle' : 'clipboard-list'}" class="w-8 h-8"></i>
-                    </div>
-                    <div class="overflow-hidden flex-1">
-                        <h4 class="font-black text-slate-800 truncate text-lg tracking-tight">${item.title}</h4>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${item.type === 'lecture' ? 'محاضرة جديدة' : 'امتحان مستقل'}</p>
-                    </div>
-                </div>
-            `).join('') || '<p class="col-span-full py-10 text-center text-slate-300 font-bold italic">لا يوجد إضافات حديثة</p>';
-
-            document.getElementById('subjects-list').innerHTML = appData.subjects.map(s => `
-                <div onclick="openSubject('${s.id}')" class="bg-white p-10 rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:border-blue-200 transition-all cursor-pointer group text-right">
-                    <div class="h-16 w-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                        <i data-lucide="book-open" class="w-8 h-8"></i>
-                    </div>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">${s.name}</h3>
-                    <p class="text-slate-400 font-bold mt-4 leading-relaxed italic text-sm">استعرض محاضرات وملخصات مادة ${s.name}</p>
-                </div>
-            `).join('') || '<p class="col-span-full py-20 text-center text-slate-300 font-bold italic border-2 border-dashed rounded-[3rem]">لم يتم إضافة مواد بعد</p>';
-            lucide.createIcons();
-        }
-
-        function openSubject(sid) {
-            const s = appData.subjects.find(x => x.id === sid);
-            if(!s) return;
-            document.getElementById('subj-title-display').innerText = s.name;
-            const filtered = appData.lectures.filter(l => l.subjectId === sid);
-            document.getElementById('lec-list-display').innerHTML = filtered.map(l => `
-                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6 hover:shadow-md transition-all text-right">
-                    <div class="flex items-center gap-5 w-full">
-                        <div class="h-16 w-16 bg-indigo-50 text-indigo-600 rounded-[1.5rem] flex items-center justify-center shrink-0">
-                            <i data-lucide="play" class="fill-current w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-black text-slate-800">${l.title}</h3>
-                            <p class="text-sm text-slate-400 font-bold mt-1">فيديو + ملزمة + اختبار</p>
-                        </div>
-                    </div>
-                    <button onclick="openLecture('${l.id}')" class="bg-blue-600 text-white px-10 py-3 rounded-2xl font-black shadow-xl active:scale-95 transition-all whitespace-nowrap">بدأ الدرس</button>
-                </div>
-            `).join('') || '<p class="py-20 text-center text-slate-400 font-bold italic">لا يوجد محاضرات مضافة</p>';
-            navigateTo('subject');
-        }
-
-        function openLecture(lid) {
-            const l = appData.lectures.find(x => x.id === lid);
-            if(!l) return;
-            document.getElementById('lec-title-display').innerText = l.title;
-            const vBox = document.getElementById('video-box');
-            const embedUrl = convertToEmbed(l.videoUrl);
-
-            if(embedUrl) {
-                vBox.innerHTML = `<iframe src="${embedUrl}" class="w-full h-full aspect-video shadow-2xl bg-black" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-            } else {
-                vBox.innerHTML = `<div class="flex flex-col items-center gap-4 text-slate-500"><i data-lucide="video-off" class="w-16 h-16 opacity-30"></i><p class="font-black">رابط الفيديو غير متاح أو غير صحيح</p></div>`;
-            }
-            
-            document.getElementById('lec-pdf-btn').style.display = l.pdfUrl ? 'flex' : 'none';
-            document.getElementById('lec-pdf-btn').onclick = () => window.open(convertToEmbed(l.pdfUrl), '_blank');
-
-            const exam = appData.exams.find(e => e.id === l.examId);
-            document.getElementById('lec-exam-btn').style.display = exam ? 'flex' : 'none';
-            document.getElementById('lec-exam-btn').onclick = () => startExam(exam);
-
-            document.getElementById('back-btn-action').onclick = () => openSubject(l.subjectId);
-            navigateTo('lecture');
-        }
-
-        function startStandaloneExam(eid) { const exam = appData.exams.find(e => e.id === eid); if(exam) startExam(exam); }
-
-        function startExam(exam) {
-            try {
-                const raw = JSON.parse(exam.content);
-                activeExamData = Array.isArray(raw) ? raw : (raw.questions || []);
-                activeExamData = activeExamData.map(q => ({
-                    question: q.q || q.question,
-                    options: q.options,
-                    correct: q.correct !== undefined ? q.correct : (q.correctAnswer - 1)
-                }));
-                examIdx = 0; examScore = 0;
-                renderExam(exam.title);
-                navigateTo('exam');
-            } catch(e) { showToast("خطأ في قراءة صيغة الامتحان"); }
-        }
-
-        function renderExam(title) {
-            const cont = document.getElementById('exam-container');
-            if(examIdx >= activeExamData.length) {
-                if(window.user) window.fb.addDoc(window.fb.getCol('submissions'), { studentName: "طالب elkhatta", examTitle: title, score: `${examScore}/${activeExamData.length}`, timestamp: window.fb.serverTimestamp() });
-                cont.innerHTML = `<div class="text-center py-10"><i data-lucide="award" class="w-20 h-20 text-yellow-500 mx-auto mb-6"></i><h2 class="text-4xl font-black mb-4 text-gray-800 tracking-tighter">أحسنت صنعاً!</h2><div class="text-8xl font-black text-blue-600 mb-10 tracking-tighter">${examScore} / ${activeExamData.length}</div><button onclick="navigateTo('dashboard')" class="bg-blue-600 text-white px-12 py-4 rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all">العودة للرئيسية</button></div>`;
-            } else {
-                const q = activeExamData[examIdx];
-                cont.innerHTML = `
-                    <div class="flex justify-between items-center mb-10"><span class="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">سؤال ${examIdx+1} من ${activeExamData.length}</span><button onclick="navigateTo('dashboard')" class="text-slate-300 hover:text-slate-600"><i data-lucide="x"></i></button></div>
-                    <h2 class="text-3xl font-black mb-10 leading-snug text-slate-800">${q.question}</h2>
-                    <div class="grid gap-4">${q.options.map((o,i) => `<button onclick="submitAns(${i}, ${q.correct}, '${title}')" class="w-full text-right p-6 rounded-[1.5rem] border-2 border-slate-50 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 font-black transition-all shadow-sm">${o}</button>`).join('')}</div>`;
-            }
-            lucide.createIcons();
-        }
-
-        function submitAns(idx, correct, title) { if(idx === correct) examScore++; examIdx++; renderExam(title); }
-
-        function renderSupport() {
-            const list = document.getElementById('messages-display');
-            list.innerHTML = appData.messages.map(m => `<div class="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50 animate-fade text-right"><div class="flex gap-4 items-start mb-6"><div class="h-12 w-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 shrink-0 shadow-inner">Q</div><p class="font-black text-xl text-slate-800 leading-relaxed">${m.text}</p></div>${m.reply ? `<div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 mr-12 relative shadow-inner"><div class="absolute -top-3 right-8 bg-indigo-600 text-white text-[10px] px-3 py-1 rounded-full font-black">رد الإدارة</div><p class="text-indigo-900 font-bold leading-loose">${m.reply}</p></div>` : '<p class="text-xs text-orange-400 mr-16 font-black italic">بانتظار مراجعة الإدارة والرد...</p>'}</div>`).join('') || '<p class="text-center font-bold text-slate-300 py-20 italic">لا يوجد رسائل منشورة</p>';
-            lucide.createIcons();
-        }
-
-        async function sendMsg() {
-            const v = document.getElementById('support-input').value; if(!v || !window.user) return;
-            await window.fb.addDoc(window.fb.getCol('messages'), { text: v, senderName: "طالب elkhatta", status: 'pending', createdAt: window.fb.serverTimestamp() });
-            document.getElementById('support-input').value = ''; showToast("تم إرسال السؤال بنجاح");
-        }
-
-        function renderAdmin(tab) {
-            appData.currentAdminTab = tab;
-            document.querySelectorAll('.adm-tab').forEach(b => {
-                b.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
-                b.classList.add('text-slate-400');
+        window.calculateExamScoreOutside = async () => {
+            const ex = JSON.parse(window.currentItem.data);
+            let s = 0;
+            ex.questions.forEach((q, i) => {
+                const sel = document.querySelector(`input[name="e_q_ext_${i}"]:checked`);
+                const card = document.querySelector(`.q-container[data-idx="${i}"]`);
+                if(sel && parseInt(sel.value) === q.answer) { s++; card.classList.add('answer-correct'); }
+                else if(sel) { card.classList.add('answer-wrong'); }
             });
-            document.getElementById(`adm-tab-${tab}`).classList.add('bg-blue-600', 'text-white', 'shadow-lg');
-            
-            const container = document.getElementById('admin-render-area');
-            container.innerHTML = '';
-            
-            if(tab === 'subjects') {
-                container.innerHTML = `<div class="bg-white p-10 rounded-[3rem] shadow-xl border space-y-8 animate-fade text-right">
-                    <h2 class="text-2xl font-black tracking-tighter">إدارة المواد الدراسية</h2>
-                    <div class="p-6 bg-blue-50 rounded-2xl space-y-4">
-                        <p class="text-xs font-bold text-blue-800 tracking-tighter uppercase">اضغط لإضافة مادة فوراً:</p>
-                        <div class="flex flex-wrap gap-2 justify-end">${SOCIAL_WORK_SUBJECTS.map(s => `<button onclick="document.getElementById('new-subj-in').value='${s}'" class="bg-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-sm hover:bg-blue-600 hover:text-white transition-all uppercase">${s}</button>`).join('')}</div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input id="new-subj-in" class="flex-1 p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-right" placeholder="اسم المادة">
-                        <button onclick="adminAddSubj()" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black shadow-lg">إضافة</button>
-                    </div>
-                    <div class="grid gap-3 pt-4">${appData.subjects.map(s => `<div class="flex justify-between items-center p-5 bg-slate-50 rounded-2xl border">
-                        <button onclick="adminDel('subjects', '${s.id}')" class="text-red-400 p-2 hover:bg-red-50 rounded-full transition-all"><i data-lucide="trash-2"></i></button>
-                        <span class="font-bold">${s.name}</span>
-                    </div>`).join('')}</div>
-                </div>`;
-            }
-
-            if(tab === 'lectures') {
-                container.innerHTML = `<div class="bg-white p-10 rounded-[3rem] shadow-xl border space-y-8 animate-fade text-right">
-                    <h2 class="text-2xl font-black text-gray-800 tracking-tighter">رفع محاضرة جديدة</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-black text-slate-400 mb-2">عنوان المحاضرة</label>
-                            <input id="lec-t-in" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-right" placeholder="مثال: المحاضرة الأولى">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-slate-400 mb-2">المادة</label>
-                            <select id="lec-s-in" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-right">
-                                <option value="">-- بدون مادة --</option>
-                                ${appData.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-slate-400 mb-2">اربط بامتحان</label>
-                            <select id="lec-e-in" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-right">
-                                <option value="">-- بدون امتحان --</option>
-                                ${appData.exams.map(e => `<option value="${e.id}">${e.title}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-black text-slate-400 mb-2">رابط الفيديو (Drive/YouTube)</label>
-                            <input id="lec-v-url" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-left" dir="ltr">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-black text-slate-400 mb-2">رابط الملزمة (Drive PDF)</label>
-                            <input id="lec-p-url" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-left" dir="ltr">
-                        </div>
-                    </div>
-                    <button onclick="adminAddLecLink()" class="w-full bg-blue-600 text-white py-5 rounded-[1.5rem] font-black shadow-xl">نشر المحاضرة</button>
-                    
-                    <div class="pt-10 border-t">
-                        <h3 class="font-black mb-4">المحاضرات المنشورة</h3>
-                        <div class="grid gap-3">${appData.lectures.map(l => `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border">
-                            <button onclick="adminDel('lectures', '${l.id}')" class="text-red-400 p-2 hover:bg-red-50 rounded-full transition-all"><i data-lucide="trash-2"></i></button>
-                            <span class="font-bold text-sm">${l.title}</span>
-                        </div>`).join('')}</div>
-                    </div>
-                </div>`;
-            }
-
-            if(tab === 'exams') {
-                container.innerHTML = `<div class="bg-white p-10 rounded-[3rem] shadow-xl border space-y-8 animate-fade text-right">
-                    <h2 class="text-2xl font-black text-indigo-600 tracking-tighter">بناء امتحان (JSON)</h2>
-                    <input id="ex-t-in" class="w-full p-5 bg-slate-50 rounded-2xl border-none font-black shadow-inner text-right" placeholder="عنوان الامتحان">
-                    <textarea id="ex-c-in" rows="6" class="w-full p-6 bg-slate-900 text-green-400 font-mono text-sm rounded-[2rem] text-left shadow-inner" dir="ltr">[{"q": "سؤال؟", "options": ["أ", "ب"], "correct": 0}]</textarea>
-                    <button onclick="adminAddExam()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl">حفظ الامتحان</button>
-                    <div class="pt-8 space-y-3">${appData.exams.map(ex => `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border">
-                        <button onclick="adminDel('exams', '${ex.id}')" class="text-red-400 p-2 hover:bg-red-50 rounded-full transition-all"><i data-lucide="trash-2"></i></button>
-                        <span class="font-bold">${ex.title}</span>
-                    </div>`).join('')}</div>
-                </div>`;
-            }
-
-            if(tab === 'msgs') {
-                container.innerHTML = appData.messages.map(m => `<div class="bg-white p-8 rounded-[2.5rem] border shadow-sm space-y-6 animate-fade text-right relative">
-                    <button onclick="adminDel('messages', '${m.id}')" class="absolute top-4 left-4 text-red-300 hover:text-red-600 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                    <p class="font-black text-lg text-slate-800 ml-8">${m.text}</p>
-                    <div class="flex gap-2">
-                        <input id="rep-${m.id}" class="flex-1 p-4 bg-slate-50 rounded-2xl border-none font-bold shadow-inner text-right" placeholder="اكتب ردك هنا...">
-                        <button onclick="adminRep('${m.id}')" class="bg-blue-600 text-white px-8 rounded-2xl font-black shadow-lg"><i data-lucide="send" class="w-5 h-5"></i></button>
-                    </div>
-                </div>`).join('') || '<p class="text-center font-bold text-slate-300 py-20 italic">لا يوجد رسائل</p>';
-            }
-            lucide.createIcons();
-        }
-
-        async function adminAddSubj() { 
-            const n = document.getElementById('new-subj-in').value; if(!n || !window.user) return; 
-            await window.fb.addDoc(window.fb.getCol('subjects'), { name: n, createdAt: window.fb.serverTimestamp() }); 
-            document.getElementById('new-subj-in').value = ''; showToast("تم إنشاء المادة"); 
-        }
-        
-        async function adminAddLecLink() {
-            const t = document.getElementById('lec-t-in').value;
-            const s = document.getElementById('lec-s-in').value;
-            const e = document.getElementById('lec-e-in').value;
-            const vUrl = document.getElementById('lec-v-url').value;
-            const pUrl = document.getElementById('lec-p-url').value;
-            if(!t || !window.user) return showToast("يرجى كتابة عنوان المحاضرة");
-            await window.fb.addDoc(window.fb.getCol('lectures'), { title: t, subjectId: s || null, examId: e || null, videoUrl: vUrl, pdfUrl: pUrl, createdAt: window.fb.serverTimestamp() });
-            showToast("تم نشر المحاضرة");
-            renderAdmin('lectures');
-        }
-
-        async function adminAddExam() { const t = document.getElementById('ex-t-in').value, c = document.getElementById('ex-c-in').value; if(!t || !c || !window.user) return; await window.fb.addDoc(window.fb.getCol('exams'), { title: t, content: c, createdAt: window.fb.serverTimestamp() }); showToast("تم حفظ الامتحان"); renderAdmin('exams'); }
-        async function adminRep(id) { const v = document.getElementById(`rep-${id}`).value; if(!v || !window.user) return; await window.fb.updateDoc(window.fb.getDocRef('messages', id), { reply: v, status: 'answered' }); showToast("تم الرد"); }
-        async function adminDel(col, id) { 
-            if(!window.user) return; 
-            if(confirm("هل أنت متأكد من الحذف؟")) {
-                await window.fb.deleteDoc(window.fb.getDocRef(col, id)); 
-                showToast("تم الحذف بنجاح"); 
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
+            await window.dbActions.add('results', { studentName: window.currentItem.studentName, examTitle: window.currentItem.title, score: s, total: ex.questions.length, date: new Date().toLocaleString('ar-EG') });
+            const perc = Math.round((s / ex.questions.length) * 100);
+            document.getElementById('exam-render-area-ext').innerHTML = `<div class="py-60 text-center italic font-black uppercase tracking-widest"><div class="w-80 h-80 rounded-full flex items-center justify-center mx-auto mb-16 text-[10rem] font-black border-[20px] animate-pulse underline decoration-blue-100">${perc}%</div><h2 class="text-7xl font-black mb-10">نتيجة مبهرة يا بطل!</h2><button onclick="window.ui.closeModal('content-viewer')" class="bg-slate-900 text-white px-20 py-8 rounded-[3rem] font-black text-4xl shadow-xl italic transition">إغلاق</button></div>`;
+        };
     </script>
 </body>
 </html>
