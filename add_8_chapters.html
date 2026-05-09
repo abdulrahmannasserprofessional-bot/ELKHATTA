@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة 8 فصول تلقائياً</title>
+    <style>
+        body {
+            font-family: 'Tajawal', Arial, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .info {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-right: 4px solid #667eea;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .chapter-list {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .chapter-item {
+            padding: 10px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-right: 3px solid #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 إضافة 8 فصول تلقائياً</h1>
+
+        <div class="info">
+            <strong>📌 ملاحظة:</strong><br>
+            سيتم إضافة 8 فصول دراسية للمادة المختارة:<br>
+            الفصل الأول، الفصل الثاني، ... الفصل الثامن
+        </div>
+
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">اختر المادة:</label>
+        <select id="courseSelect">
+            <option value="">جاري التحميل...</option>
+        </select>
+
+        <button onclick="add8Chapters()">✨ إضافة 8 فصول</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script src="../js/data_manager.js"></script>
+    <script>
+        let courses = [];
+
+        // تحميل المواد عند فتح الصفحة
+        async function loadCourses() {
+            const select = document.getElementById('courseSelect');
+            try {
+                courses = await DataManager.getCourses();
+                if (courses.length === 0) {
+                    select.innerHTML = '<option value="">لا توجد مواد - أضف مادة أولاً</option>';
+                    return;
+                }
+
+                select.innerHTML = '<option value="">-- اختر المادة --</option>' +
+                    courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+            } catch (error) {
+                select.innerHTML = '<option value="">خطأ في التحميل</option>';
+                console.error(error);
+            }
+        }
+
+        async function add8Chapters() {
+            const select = document.getElementById('courseSelect');
+            const courseId = select.value;
+            const resultDiv = document.getElementById('result');
+
+            if (!courseId) {
+                alert('⚠️ يجب اختيار المادة أولاً');
+                return;
+            }
+
+            const course = courses.find(c => c.id === courseId);
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#fef3c7';
+            resultDiv.style.color = '#92400e';
+            resultDiv.textContent = '⏳ جاري الإضافة...';
+
+            try {
+                // أنشئ 8 فصول
+                const chapters = [];
+                for (let i = 1; i <= 8; i++) {
+                    chapters.push({
+                        id: Date.now().toString() + i,
+                        title: `الفصل ${i === 1 ? 'الأول' :
+                            i === 2 ? 'الثاني' :
+                                i === 3 ? 'الثالث' :
+                                    i === 4 ? 'الرابع' :
+                                        i === 5 ? 'الخامس' :
+                                            i === 6 ? 'السادس' :
+                                                i === 7 ? 'السابع' : 'الثامن'}`,
+                        lectures: []
+                    });
+                }
+
+                // احفظ في المادة
+                course.chapters = chapters;
+
+                const DB_URL = 'https://elkhotta-default-rtdb.europe-west1.firebasedatabase.app';
+                const response = await fetch(`${DB_URL}/courses/${courseId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(course)
+                });
+
+                const savedCourse = await response.json();
+
+                resultDiv.style.background = '#d1fae5';
+                resultDiv.style.color = '#065f46';
+                resultDiv.innerHTML = `<strong>✅ تم بنجاح!</strong>
+
+تم إضافة 8 فصول للمادة: <strong>${course.title}</strong>
+
+الفصول المضافة:
+${chapters.map((ch, i) => `${i + 1}. ${ch.title}`).join('\n')}
+
+<div class="chapter-list">
+${chapters.map(ch => `<div class="chapter-item">📁 ${ch.title}</div>`).join('')}
+</div>
+
+<strong>🎓 الآن:</strong>
+• افتح صفحة الطالب لرؤية الفصول
+• أو اذهب لصفحة الأدمن لإضافة محتوى داخل الفصول`;
+
+                // حدّث القائمة
+                setTimeout(() => {
+                    alert('✅ تم إضافة 8 فصول!\n\nيمكنك الآن:\n• فتح صفحة الطالب لرؤيتها\n• إضافة محاضرات وامتحانات داخل كل فصل');
+                }, 500);
+
+            } catch (error) {
+                resultDiv.style.background = '#fee2e2';
+                resultDiv.style.color = '#991b1b';
+                resultDiv.textContent = '❌ حدث خطأ: ' + error.message;
+            }
+        }
+
+        // تحميل المواد عند فتح الصفحة
+        loadCourses();
+    </script>
+</body>
+
+</html>

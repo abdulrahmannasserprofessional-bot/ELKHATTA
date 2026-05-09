@@ -1,0 +1,36 @@
+{
+  "name": "المنصة التعليمية الاحترافية",
+  "short_name": "المنصة",
+  "description": "منصة تعليمية متطورة تتيح للطلاب متابعة المحاضرات وحل الامتحانات التفاعلية بسهولة.",
+  "start_url": "/student/index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3413/3413535.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3413/3413535.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "لوحة الطالب",
+      "url": "/student/index.html",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3413/3413535.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "لوحة الإدارة",
+      "url": "/admin/index.html",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3413/3413535.png", "sizes": "192x192" }]
+    }
+  ]
+}

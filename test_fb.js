@@ -1,0 +1,1 @@
+fetch('https://elkhotta-default-rtdb.europe-west1.firebasedatabase.app/students.json?orderBy="phone"&equalTo="01158210358"').then(r => r.json().then(j => console.log(r.status, j))).catch(console.error);

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تشخيص الفصول</title>
+    <style>
+        body {
+            font-family: 'Tajawal', Arial, sans-serif;
+            padding: 20px;
+            background: #f0f9ff;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #0d9488;
+            text-align: center;
+        }
+
+        .step {
+            background: #f8fafc;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #0d9488;
+        }
+
+        button {
+            background: #0d9488;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            background: #0f766e;
+        }
+
+        .result {
+            background: #eff6ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 اختبار تشخيص الفصول</h1>
+
+        <div class="step">
+            <h3>الخطوة 1: اختبار الاتصال بـ Firebase</h3>
+            <button onclick="testFirebaseConnection()">اختبار الاتصال</button>
+            <div id="result1" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>الخطوة 2: عرض جميع المواد</h3>
+            <button onclick="listAllCourses()">عرض المواد</button>
+            <div id="result2" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>الخطوة 3: إضافة فصل تجريبي</h3>
+            <input type="text" id="courseIdInput" placeholder="معرف المادة (Course ID)"
+                style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #e2e8f0; border-radius: 8px;">
+            <input type="text" id="chapterTitleInput" placeholder="اسم الفصل" value="فصل تجريبي"
+                style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #e2e8f0; border-radius: 8px;">
+            <button onclick="testAddChapter()">إضافة الفصل</button>
+            <div id="result3" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>الخطوة 4: التحقق من الفصول</h3>
+            <button onclick="verifyChapters()">التحقق من الفصول</button>
+            <div id="result4" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>الخطوة 5: اختبار مباشر على Firebase</h3>
+            <button onclick="directFirebaseTest()">حفظ مباشر</button>
+            <div id="result5" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = 'https://elkhotta-default-rtdb.europe-west1.firebasedatabase.app';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result ' + (isError ? 'error' : 'success');
+            element.textContent = content;
+        }
+
+        async function testFirebaseConnection() {
+            try {
+                showResult('result1', '⏳ جاري الاتصال بـ Firebase...');
+                const response = await fetch(`${FIREBASE_URL}/.json`);
+                const data = await response.json();
+                showResult('result1', `✅ الاتصال ناجح!\nالبيانات: ${JSON.stringify(data, null, 2).substring(0, 500)}...`);
+            } catch (error) {
+                showResult('result1', `❌ فشل الاتصال: ${error.message}`, true);
+            }
+        }
+
+        async function listAllCourses() {
+            try {
+                showResult('result2', '⏳ جاري جلب المواد...');
+                const response = await fetch(`${FIREBASE_URL}/courses.json`);
+                const courses = await response.json();
+
+                if (!courses) {
+                    showResult('result2', '⚠️ لا توجد مواد في قاعدة البيانات');
+                    return;
+                }
+
+                let output = '📚 المواد الموجودة:\n\n';
+                Object.keys(courses).forEach(id => {
+                    const course = courses[id];
+                    const chaptersCount = course.chapters ? course.chapters.length : 0;
+                    output += `ID: ${id}\n`;
+                    output += `الاسم: ${course.title}\n`;
+                    output += `عدد الفصول: ${chaptersCount}\n`;
+                    if (course.chapters) {
+                        output += `الفصول: ${JSON.stringify(course.chapters, null, 2)}\n`;
+                    }
+                    output += '\n---\n\n';
+                });
+
+                showResult('result2', output);
+            } catch (error) {
+                showResult('result2', `❌ خطأ: ${error.message}`, true);
+            }
+        }
+
+        async function testAddChapter() {
+            const courseId = document.getElementById('courseIdInput').value.trim();
+            const title = document.getElementById('chapterTitleInput').value.trim();
+
+            if (!courseId) {
+                showResult('result3', '❌ يجب إدخال معرف المادة', true);
+                return;
+            }
+
+            if (!title) {
+                showResult('result3', '❌ يجب إدخال اسم الفصل', true);
+                return;
+            }
+
+            try {
+                showResult('result3', '⏳ جاري الإضافة...');
+
+                // Step 1: Get current course
+                const getCourseResponse = await fetch(`${FIREBASE_URL}/courses/${courseId}.json`);
+                const course = await getCourseResponse.json();
+
+                if (!course) {
+                    showResult('result3', `❌ المادة غير موجودة (ID: ${courseId})`, true);
+                    return;
+                }
+
+                showResult('result3', `📖 المادة الحالية:\n${JSON.stringify(course, null, 2)}\n\n⏳ جاري إضافة الفصل...`);
+
+                // Step 2: Add chapter
+                course.chapters = course.chapters || [];
+                const newChapter = {
+                    id: Date.now().toString(),
+                    title: title,
+                    lectures: []
+                };
+                course.chapters.push(newChapter);
+
+                // Step 3: Save back
+                const saveResponse = await fetch(`${FIREBASE_URL}/courses/${courseId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(course)
+                });
+                const savedCourse = await saveResponse.json();
+
+                showResult('result3', `✅ تم الحفظ بنجاح!\n\nالمادة المحدثة:\n${JSON.stringify(savedCourse, null, 2)}\n\nعدد الفصول الآن: ${savedCourse.chapters.length}`);
+            } catch (error) {
+                showResult('result3', `❌ خطأ: ${error.message}\n${error.stack}`, true);
+            }
+        }
+
+        async function verifyChapters() {
+            const courseId = document.getElementById('courseIdInput').value.trim();
+
+            if (!courseId) {
+                showResult('result4', '❌ يجب إدخال معرف المادة', true);
+                return;
+            }
+
+            try {
+                showResult('result4', '⏳ جاري التحقق...');
+                const response = await fetch(`${FIREBASE_URL}/courses/${courseId}.json`);
+                const course = await response.json();
+
+                if (!course) {
+                    showResult('result4', `❌ المادة غير موجودة`, true);
+                    return;
+                }
+
+                const chaptersCount = course.chapters ? course.chapters.length : 0;
+                showResult('result4', `📊 عدد الفصول: ${chaptersCount}\n\nالفصول:\n${JSON.stringify(course.chapters, null, 2)}`);
+            } catch (error) {
+                showResult('result4', `❌ خطأ: ${error.message}`, true);
+            }
+        }
+
+        async function directFirebaseTest() {
+            try {
+                showResult('result5', '⏳ اختبار الحفظ المباشر...');
+
+                const testData = {
+                    test: true,
+                    timestamp: Date.now(),
+                    chapters: [
+                        { id: '1', title: 'فصل تجريبي 1', lectures: [] },
+                        { id: '2', title: 'فصل تجريبي 2', lectures: [] }
+                    ]
+                };
+
+                const response = await fetch(`${FIREBASE_URL}/test_chapter.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                const result = await response.json();
+
+                showResult('result5', `✅ الحفظ المباشر نجح!\n\nالبيانات المحفوظة:\n${JSON.stringify(result, null, 2)}\n\nتحقق من: ${FIREBASE_URL}/test_chapter.json`);
+            } catch (error) {
+                showResult('result5', `❌ خطأ: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+
+</html>

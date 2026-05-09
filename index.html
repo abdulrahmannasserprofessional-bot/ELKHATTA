@@ -2,479 +2,297 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>البحث عن أماكن الطلاب</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>منصة الخطة التعليمية | مستقبل التعلم الذكي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/modern_ui.css">
     <style>
         body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #f3f4f6;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
         }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .hero-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xl);
+            padding: 4rem 2rem;
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: var(--shadow-xl);
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-box {
+            width: 100px;
+            height: 100px;
+            background: var(--grad-primary);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            color: white;
+            font-weight: 900;
+            margin: 0 auto 2rem;
+            box-shadow: var(--shadow-premium);
+            animation: pulse-soft 3s infinite;
+        }
+
+        .welcome-h1 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .btn-land {
+            height: 70px;
+            font-size: 1.3rem;
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-student-land {
+            background: var(--grad-primary);
+            color: white;
+            box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-admin-land {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-land:hover {
+            transform: translateY(-5px);
+            filter: brightness(1.1);
+        }
+
+        .btn-student-land:hover {
+            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-admin-land:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .floating-elements div {
+            position: absolute;
+            z-index: 1;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .float-1 { top: 10%; right: 10%; font-size: 5rem; animation: float 6s infinite ease-in-out; }
+        .float-2 { bottom: 15%; left: 5%; font-size: 4rem; animation: float 8s infinite ease-in-out reverse; }
+        .float-3 { top: 40%; left: 15%; font-size: 3rem; animation: float 7s infinite ease-in-out; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @media (max-width: 640px) {
+            .hero-card { padding: 3rem 1.5rem; }
+            .welcome-h1 { font-size: 2.8rem; }
+            .actions-container { grid-template-columns: 1fr; }
+        }
+
+        /* PWA Install Banner Style */
+        #pwa-install-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(79, 70, 229, 0.95));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 15px 20px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .install-content { display: flex; align-items: center; gap: 15px; width: 100%; }
+        .install-icon { width: 45px; height: 45px; background: white; color: #4f46e5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.5rem; flex-shrink: 0; }
+        .install-text { flex: 1; text-align: right; }
+        .install-text h4 { margin: 0; color: white; font-size: 1rem; font-weight: 800; }
+        .install-text p { margin: 2px 0 0; color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 600; }
+        .install-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-install-now { background: white; color: #4f46e5; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .btn-install-now:hover { transform: scale(1.05); background: #f8fafc; }
+        .btn-install-close { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 5px; opacity: 0.7; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4">
-
-    <div class="max-w-3xl mx-auto">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6 text-center border-t-4 border-blue-600">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">نظام الاستعلام عن أماكن الطلاب</h1>
-            <p class="text-gray-600">المعهد العالي للخدمة الاجتماعية بالقاهرة</p>
-            <p class="text-sm text-gray-500 mt-1">الفرقة الثالثة - مجموعة رقم ( 6 )</p>
-            <p class="text-xs text-blue-500 mt-2">تم تحديث البيانات: الصفحات من 1 إلى 14</p>
-        </div>
-
-        <!-- Search Box -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6 sticky top-4 z-10 border border-gray-200">
-            <label for="searchInput" class="block text-gray-700 font-bold mb-2 text-lg">أدخل اسم الطالب:</label>
-            <div class="relative">
-                <input type="text" id="searchInput" 
-                    class="w-full p-4 pr-12 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
-                    placeholder="">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
+<body>
+    <div id="pwa-install-banner" class="hidden">
+        <div class="install-content">
+            <div class="install-icon">خ</div>
+            <div class="install-text">
+                <h4>ثبت منصة الخطة</h4>
+                <p>للحصول على تجربة أسرع وأفضل</p>
             </div>
-            <p id="resultCount" class="text-sm text-gray-500 mt-2 text-left hidden">تم العثور على <span id="countNum" class="font-bold">0</span> نتيجة</p>
+            <div class="install-actions">
+                <button id="btn-pwa-install" class="btn-install-now">تثبيت الآن</button>
+                <button onclick="document.getElementById('pwa-install-banner').classList.add('hidden')" class="btn-install-close">✕</button>
+            </div>
         </div>
+    </div>
+    <div class="floating-elements">
+        <div class="float-1">🚀</div>
+        <div class="float-2">📚</div>
+        <div class="float-3">💡</div>
+    </div>
 
-        <!-- Results Area -->
-        <div id="resultsArea" class="space-y-3">
-            <div class="text-center text-gray-500 py-10">
-                ابدا الكتابة في مربع البحث للعثور على رقم الصفحة والجلوس
+    <div class="main-wrapper">
+        <div class="hero-card">
+            <div class="logo-box">خ</div>
+            <h1 class="welcome-h1">مرحباً بك في<br><span class="text-gradient">منصة الخطة</span></h1>
+            <p class="welcome-p">بوابتك الذكية للتعلم المبدع والتفوق الدراسي. تجربة تعليمية فريدة مصممة لتناسب احتياجاتك وتطور مهاراتك.</p>
+            
+            <div class="actions-container">
+                <a href="student/index.html" class="btn-land btn-student-land">
+                    <i class="fas fa-graduation-cap"></i> دخول الطالب
+                </a>
+                <a href="admin/index.html" class="btn-land btn-admin-land">
+                    <i class="fas fa-user-shield"></i> لوحة الإدارة
+                </a>
+            </div>
+            
+            <div style="margin-top: 3rem; color: #64748b; font-size: 0.9rem; font-weight: 600;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: #10b981; border-radius: 50%; margin-left: 8px; animation: pulse-soft 2s infinite;"></span>
+                النظام يعمل الآن بكفاءة عالية (v4.0)
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="text-center text-gray-500 text-sm mt-8 pb-4">
-        تم التصميم للمساعدة في تنظيم الكشوف
-    </footer>
 
-    <script>
-        // ==========================================
-        // قاعدة البيانات (الصفحات 1 - 14)
-        // ==========================================
-        const studentsDatabase = [
-            // --- صفحة 1 ---
-            { id: 31609, name: "شهد محمد ممدوح محمد", page: 1 },
-            { id: 31610, name: "شهد محمد نجيب ابراهيم", page: 1 },
-            { id: 31611, name: "شهد محمود امام عنتر", page: 1 },
-            { id: 31612, name: "شهد محمود سعد جويلي", page: 1 },
-            { id: 31613, name: "شهد محمود سعيد محمود أحمد", page: 1 },
-            { id: 31614, name: "شهد محمود علي عثمان", page: 1 },
-            { id: 31615, name: "شهد محمود علي محمد سلام", page: 1 },
-            { id: 31616, name: "شهد محمود كامل عبد الهادي محمد", page: 1 },
-            { id: 31617, name: "شهد مصري جاد حسين احمد", page: 1 },
-            { id: 31618, name: "شهد مصطفى احمد مصطفى", page: 1 },
-            { id: 31619, name: "شهد مصطفى شحات حسنين احمد", page: 1 },
-            { id: 31620, name: "شهد مصطفى عبدالمجيد عبدالمجيد", page: 1 },
-            { id: 31621, name: "شهد منصور رضا عبود", page: 1 },
-            { id: 31622, name: "شهد منصور محمد عبيد", page: 1 },
-            { id: 31623, name: "شهد منير الدسوقي محمود شلضم", page: 1 },
-            { id: 31624, name: "شهد ناصر محمود محمد", page: 1 },
-            { id: 31625, name: "شهد نزيه عبدالعال محمد", page: 1 },
-            { id: 31626, name: "شهد هاشم طنطاوي عمار طنطاوي", page: 1 },
-            { id: 31627, name: "شهد هاني ابراهيم سعيد ابراهيم", page: 1 },
-            { id: 31628, name: "شهد هاني ابراهيم علي", page: 1 },
-            { id: 31629, name: "شهد هاني شاكر حسنين", page: 1 },
-            { id: 31630, name: "شهد هاني محمد لطفي سيد احمد", page: 1 },
-            { id: 31631, name: "شهد هشام السيد محمد زويد", page: 1 },
-            { id: 31632, name: "شهد هشام محمود حامد الهمص", page: 1 },
 
-            // --- صفحة 2 ---
-            { id: 31633, name: "شهد وائل احمد عبد اللاه", page: 2 },
-            { id: 31634, name: "شهد وليد الغريب احمد", page: 2 },
-            { id: 31635, name: "شهد وليد حلمي عبد الله", page: 2 },
-            { id: 31636, name: "شهد وليد محمود راجي", page: 2 },
-            { id: 31637, name: "شهد ياسر حسن بكري", page: 2 },
-            { id: 31638, name: "شهد ياسر عبدالله حلبي", page: 2 },
-            { id: 31639, name: "شهدان هاني عبدالرحمن السيد غانم", page: 2 },
-            { id: 31640, name: "شهيره علي عبدالدايم محمود", page: 2 },
-            { id: 31641, name: "شوقي محي عمار محي", page: 2 },
-            { id: 31642, name: "شيري امجد عزيز عريان", page: 2 },
-            { id: 31643, name: "شيري مدحت صبري ميلاد", page: 2 },
-            { id: 31644, name: "شيرين احمد احمد احمد خلف", page: 2 },
-            { id: 31645, name: "شيرين احمد جبر محمد حسين", page: 2 },
-            { id: 31646, name: "شيرين السيد محمد محمود نصر", page: 2 },
-            { id: 31647, name: "شيرين خالد السيد عبدالفتاح", page: 2 },
-            { id: 31648, name: "شيرين فتحي محمد علي عبدالكريم", page: 2 },
-            { id: 31649, name: "شيماء أحمد حسن محمد عبدالدايم", page: 2 },
-            { id: 31650, name: "شيماء ابراهيم رجب محمود", page: 2 },
-            { id: 31651, name: "شيماء احمد حمدي محمد شانلي", page: 2 },
-            { id: 31652, name: "شيماء احمد ريان جمعه", page: 2 },
-            { id: 31653, name: "شيماء اسماعيل عنيبه احمد محمد", page: 2 },
-            { id: 31654, name: "شيماء اسماعيل محمد طه", page: 2 },
-            { id: 31655, name: "شيماء اشرف عبدالصمد محمود", page: 2 },
-            { id: 31656, name: "شيماء جميل عبدالفتاح عطية الجوهري", page: 2 },
+        // PWA Install Logic
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('btn-pwa-install');
 
-            // --- صفحة 3 ---
-            { id: 31657, name: "شيماء حسن محمد حسن", page: 3 },
-            { id: 31658, name: "شيماء خالد ذكي مهدي", page: 3 },
-            { id: 31659, name: "شيماء خلف علي محمد", page: 3 },
-            { id: 31660, name: "شيماء خليفه سيد عبدالسلام", page: 3 },
-            { id: 31661, name: "شيماء رجب فتحي حسن صالح", page: 3 },
-            { id: 31662, name: "شيماء رضا صلاح سليمان", page: 3 },
-            { id: 31663, name: "شيماء سعيد حامد فودة", page: 3 },
-            { id: 31664, name: "شيماء سعيد كامل حسين محمد", page: 3 },
-            { id: 31665, name: "شيماء سعيد يونس تهامي احمد", page: 3 },
-            { id: 31666, name: "شيماء سيد عاشور احمد محمد", page: 3 },
-            { id: 31667, name: "شيماء شريف احمد الدرديري", page: 3 },
-            { id: 31668, name: "شيماء شعبان عوض عبدالوهاب", page: 3 },
-            { id: 31669, name: "شيماء صلاح حاتم حافظ ذو الفقار", page: 3 },
-            { id: 31670, name: "شيماء عادل سليمان جلال محمد", page: 3 },
-            { id: 31671, name: "شيماء عادل محمد محمد بحيري", page: 3 },
-            { id: 31672, name: "شيماء عاطف بربري صادق", page: 3 },
-            { id: 31673, name: "شيماء عبدالمرضي احمد فرج سليم", page: 3 },
-            { id: 31674, name: "شيماء عبدالمعطي موسى خلف", page: 3 },
-            { id: 31675, name: "شيماء علي عبد سليم محمد محمد", page: 3 },
-            { id: 31676, name: "شيماء عمار عبد خلف", page: 3 },
-            { id: 31677, name: "شيماء فضل فضل سليمان", page: 3 },
-            { id: 31678, name: "شيماء كمال محمود محمد", page: 3 },
-            { id: 31679, name: "شيماء محمد امين عبدالكريم درويش", page: 3 },
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Update UI to notify the user they can add to home screen
+            installBanner.classList.remove('hidden');
+        });
 
-            // --- صفحة 4 ---
-            { id: 31681, name: "شيماء محمد عبيد عليان نصر", page: 4 },
-            { id: 31682, name: "شيماء محمد عبد الله كمال النادي", page: 4 },
-            { id: 31683, name: "شيماء محمد عبدالواحد عبدالبر علي", page: 4 },
-            { id: 31684, name: "شيماء مصطفى السيد عطوه", page: 4 },
-            { id: 31685, name: "شيماء مصطفى علي محمود", page: 4 },
-            { id: 31686, name: "شيماء ممتاز صبحي حسين", page: 4 },
-            { id: 31687, name: "شيماء ناجح ابراهيم احمد", page: 4 },
-            { id: 31688, name: "شيماء نادي عبدالعظيم محمود", page: 4 },
-            { id: 31689, name: "شيماء وائل سعد محمد", page: 4 },
-            { id: 31690, name: "شيماء وليد احمد ابو سيف", page: 4 },
-            { id: 31691, name: "صابحه احمد ابوالسعود علي", page: 4 },
-            { id: 31692, name: "صابرين عبدالنبي محمود ابراهيم", page: 4 },
-            { id: 31693, name: "صابرين عماد فتحي عبد الغني", page: 4 },
-            { id: 31694, name: "صابرين مسعود احمد ربيع", page: 4 },
-            { id: 31695, name: "صباح سيد رفعت محمد احمد", page: 4 },
-            { id: 31696, name: "صباح صلاح خليل امام فرحات", page: 4 },
-            { id: 31697, name: "صباح عادل السيد محمود", page: 4 },
-            { id: 31698, name: "صباح محمد ابوسريع محمد", page: 4 },
-            { id: 31699, name: "صفا عامر محمد سالم زيدان", page: 4 },
-            { id: 31700, name: "صفاء احمد حسين محمود الشواربي", page: 4 },
-            { id: 31701, name: "صفاء احمد عبده عبدالمولي", page: 4 },
-            { id: 31702, name: "صفاء عبدالله حسن عبدالنبي عبدالعال", page: 4 },
-            { id: 31703, name: "صفاء كمال محمد سعد الدين", page: 4 },
-            { id: 31704, name: "صفيه محمود عبدالسميع عراقي", page: 4 },
-
-            // --- صفحة 5 ---
-            { id: 31705, name: "صلاح نادر محمد صلاح عباس", page: 5 },
-            { id: 31706, name: "ضحا محمود الازهري سلامه", page: 5 },
-            { id: 31707, name: "ضحى احمد ابو العباس سليم عبد النعيم", page: 5 },
-            { id: 31708, name: "ضحى احمد رشدي محمد السيد", page: 5 },
-            { id: 31709, name: "ضحى حسني احمد حسن", page: 5 },
-            { id: 31710, name: "ضحى رفعت عطا شحاته عطا", page: 5 },
-            { id: 31711, name: "ضحى طارق حسن امام", page: 5 },
-            { id: 31712, name: "ضحى محسن محمد محمود", page: 5 },
-            { id: 31713, name: "ضحى محمد ابراهيم حسن علي", page: 5 },
-            { id: 31714, name: "ضحى محمد رمضان محمد", page: 5 },
-            { id: 31715, name: "ضحى محمد قرني محمود مصطفى", page: 5 },
-            { id: 31716, name: "ضحى مكرم احمد علي احمد", page: 5 },
-            { id: 31717, name: "ضحى همام عبد العزيز امين", page: 5 },
-            { id: 31718, name: "طارق عبد الله محمد مراد", page: 5 },
-            { id: 31719, name: "طه احمد طه محمد", page: 5 },
-            { id: 31720, name: "عائشه حازم مصطفى محمد مصطفى الاشرم", page: 5 },
-            { id: 31721, name: "عائشه سالم صبيح سويلم صبيح", page: 5 },
-            { id: 31722, name: "عائشه عصام عبدالسلام يوسف", page: 5 },
-            { id: 31723, name: "عائشه مجدى على حسن", page: 5 },
-            { id: 31724, name: "عائشه هشام قطب جاد", page: 5 },
-            { id: 31725, name: "عائشه ياسر سليمان محمود عبداللطيف", page: 5 },
-            { id: 31726, name: "عاطف ابوالخير ثابت مرسي", page: 5 },
-            { id: 31727, name: "عامر عويس عبد السميع سلطان", page: 5 },
-            { id: 31728, name: "عايده رمضان حسن محمود", page: 5 },
-
-            // --- صفحة 6 ---
-            { id: 31729, name: "عايده هاني احمد محمد", page: 6 },
-            { id: 31730, name: "عبدالرحمن احمد سيد احمد", page: 6 },
-            { id: 31731, name: "عبدالرحمن ايهاب محمد رمضان", page: 6 },
-            { id: 31732, name: "عبدالرحمن محمد عبد الرازق منصور", page: 6 },
-            { id: 31733, name: "عبدالرحمن محمد مصطفى", page: 6 },
-            { id: 31734, name: "عبدالعزيز رأفت علي محمد علي", page: 6 },
-            { id: 31735, name: "عبد القادر نبيل عبد القادر شحاته محرم", page: 6 },
-            { id: 31736, name: "عبد الله مسعد ابراهيم حسب", page: 6 },
-            { id: 31737, name: "عبد الله يسرى نعمى محمد", page: 6 },
-            { id: 31738, name: "عبد المسيح سامي موسى شحاته", page: 6 },
-            { id: 31739, name: "عبدالحميد عادل عبدالحميد سالم", page: 6 },
-            { id: 31740, name: "عبدالرحمن احمد عبدالمنعم السيد", page: 6 },
-            { id: 31741, name: "عبدالرحمن اسماعيل فؤاد عبدالحليم", page: 6 },
-            { id: 31742, name: "عبدالرحمن اشرف السيد حسنين", page: 6 },
-            { id: 31743, name: "عبدالرحمن جابر احمد سيد", page: 6 },
-            { id: 31744, name: "عبدالرحمن جمال السيد علي دياب", page: 6 },
-            { id: 31745, name: "عبدالرحمن حمدي ابراهيم عبد المعطي", page: 6 },
-            { id: 31746, name: "عبدالرحمن سمير عبدربه فرحان صالح", page: 6 },
-            { id: 31747, name: "عبدالرحمن طارق عبد الله علي", page: 6 },
-            { id: 31748, name: "عبدالرحمن طارق ممدوح محمد", page: 6 },
-            { id: 31749, name: "عبدالرحمن عثمان بكري محمد", page: 6 },
-            { id: 31750, name: "عبدالرحمن عماد شعبان ابراهيم", page: 6 },
-            { id: 31751, name: "عبدالرحمن مجدي عبد الرحمن عبد السميع", page: 6 },
-            { id: 31752, name: "عبدالرحمن محمد ابراهيم محمد", page: 6 },
-
-            // --- صفحة 7 ---
-            { id: 31753, name: "عبدالرحمن محمد سمير عبدالستار", page: 7 },
-            { id: 31754, name: "عبدالرحمن محمد سيد محمد", page: 7 },
-            { id: 31755, name: "عبدالرحمن محمد هاشم حسين محمد", page: 7 },
-            { id: 31756, name: "عبدالرحمن محمد يوسف متولي", page: 7 },
-            { id: 31757, name: "عبدالرحمن ناصر بسيوني فهمي", page: 7 },
-            { id: 31758, name: "عبدالرحمن وليد سيد عواد محمد", page: 7 },
-            { id: 31759, name: "عبدالسلام علاءالدين عطا محمد", page: 7 },
-            { id: 31760, name: "عبدالعزيز مختار عبدالعزيز ابراهيم الوكيل", page: 7 },
-            { id: 31761, name: "عبدالفضيل فضلون عبدالفضيل سيد احمد", page: 7 },
-            { id: 31762, name: "عبدالله احمد عبدالله احمد", page: 7 },
-            { id: 31763, name: "عبدالله حسن عبدالله احمد", page: 7 },
-            { id: 31764, name: "عبدالله حسين عبدالله عبدالوهاب", page: 7 },
-            { id: 31765, name: "عبدالله حسين عبدالله محمد", page: 7 },
-            { id: 31766, name: "عبدالله رجب عبدالله راغب", page: 7 },
-            { id: 31767, name: "عبدالله محمد السيد عثمان حسين", page: 7 },
-            { id: 31768, name: "عبدالله محمد سعد ذكي عبد الله", page: 7 },
-            { id: 31769, name: "عبدالله محمود محمد كيلاني", page: 7 },
-            { id: 31770, name: "عبدالله هاني السيد عبدالغني", page: 7 },
-            { id: 31771, name: "عبدالله وحيد محمد احمد جاب الله", page: 7 },
-            { id: 31772, name: "عبدالله يوسف احمد يوسف", page: 7 },
-            { id: 31773, name: "عبير ابراهيم عبد الحكيم عبد المعبود", page: 7 },
-            { id: 31774, name: "عبير ربيع احمد عبدالعظيم", page: 7 },
-            { id: 31775, name: "عبير رمضان عبدالله محمود", page: 7 },
-            { id: 31776, name: "عبير ناصر مصطفى حسن محمد", page: 7 },
-
-            // --- صفحة 8 ---
-            { id: 31777, name: "عزالدين احمد عبدالفتاح حسن", page: 8 },
-            { id: 31778, name: "عزه احمد محمد السيد حسن", page: 8 },
-            { id: 31779, name: "عزه بدر خطاب عبدالعزيز", page: 8 },
-            { id: 31780, name: "عزه ربيع محمد احمد", page: 8 },
-            { id: 31781, name: "عزه عبدالكريم محمود عبدالكريم", page: 8 },
-            { id: 31782, name: "عزيزه عبدالرحمن سيد عبدالقادر", page: 8 },
-            { id: 31783, name: "عطيات رضا محمود محمد", page: 8 },
-            { id: 31784, name: "عطيات محمد جمعه سيد سويعد", page: 8 },
-            { id: 31785, name: "عفاف سيد حسن حسن قطب", page: 8 },
-            { id: 31786, name: "عفاف علي عبدالرحيم احمد حامد", page: 8 },
-            { id: 31787, name: "علا احمد مصطفى امين", page: 8 },
-            { id: 31788, name: "علا حميده حامد يوسف حجاج", page: 8 },
-            { id: 31789, name: "علا خالد محمد حافظ عبداللطيف", page: 8 },
-            { id: 31790, name: "علا شعبان نبيه حسن", page: 8 },
-            { id: 31791, name: "علا عامر علي عبدالرحمن", page: 8 },
-            { id: 31792, name: "علا ماهر سند محمد عبدالوهاب", page: 8 },
-            { id: 31793, name: "علا محمد محمود اسماعيل عبده", page: 8 },
-            { id: 31794, name: "علا محمود بدوى محمود بدوى", page: 8 },
-            { id: 31795, name: "علا مشحوت حسين مشحوت", page: 8 },
-            { id: 31796, name: "علا نادى عبد المنعم محمود على", page: 8 },
-            { id: 31797, name: "علا هاشم محمود محمد مكى", page: 8 },
-            { id: 31798, name: "على عبدالعظيم محمد على", page: 8 },
-            { id: 31799, name: "على مصطفى عبدالجليل عبدالفتاح", page: 8 },
-            { id: 31800, name: "على نجدى فرج عبد الرازق", page: 8 },
-
-            // --- صفحة 9 ---
-            { id: 31801, name: "على وائل على محمد", page: 9 },
-            { id: 31802, name: "علياء احمد مصطفى امين", page: 9 },
-            { id: 31803, name: "علياء اسامه محمد الحاج", page: 9 },
-            { id: 31804, name: "علياء عادل محمد محمد اسماعيل", page: 9 },
-            { id: 31805, name: "علياء عزيز طايع عبد الغنى", page: 9 },
-            { id: 31806, name: "علياء عصام عزت محمود الفيومى", page: 9 },
-            { id: 31807, name: "علياء على سيد محمد", page: 9 },
-            { id: 31808, name: "عليه محمد احمد على محمد", page: 9 },
-            { id: 31809, name: "عمر اشرف احمد عبدالفتاح ابراهيم", page: 9 },
-            { id: 31810, name: "عمر اشرف عبدالعاطى عبدالدائم", page: 9 },
-            { id: 31811, name: "عمر السيد عبدالسلام فرج", page: 9 },
-            { id: 31812, name: "عمر جمال ابراهيم الشرانى", page: 9 },
-            { id: 31813, name: "عمر خالد سعيد محمد", page: 9 },
-            { id: 31814, name: "عمر سيد محمد محمد", page: 9 },
-            { id: 31815, name: "عمر سيد موسى سيد موسى", page: 9 },
-            { id: 31816, name: "عمر شريف محمد محمد غازى", page: 9 },
-            { id: 31817, name: "عمر شعبان طه محمد عيد", page: 9 },
-            { id: 31818, name: "عمر عاطف حسنى عبدالبر", page: 9 },
-            { id: 31819, name: "عمر على عبد الحفيظ على سالم", page: 9 },
-            { id: 31820, name: "عمر متولى عبد الله متولى", page: 9 },
-            { id: 31821, name: "عمر محمد ابوالفتوح على موجى", page: 9 },
-            { id: 31822, name: "عمر محمد الديساوى يوسف", page: 9 },
-            { id: 31823, name: "عمر محمد عبدالقادر قاسم جاد", page: 9 },
-            { id: 31824, name: "عمر محمد محمد السيد المنياوى", page: 9 },
-
-            // --- صفحة 10 ---
-            { id: 31825, name: "عمر مختار صلاح الدين بكرى حسين", page: 10 },
-            { id: 31826, name: "عمر مدحت خليل عبدالحميد", page: 10 },
-            { id: 31827, name: "عمر نبيل محمد عبد الحافظ", page: 10 },
-            { id: 31828, name: "عمر يسرى حسن احمد", page: 10 },
-            { id: 31829, name: "عمرو عادل عبدالحميد محمد سليم", page: 10 },
-            { id: 31830, name: "عمرو عادل عبدالوهاب سيد القصاص", page: 10 },
-            { id: 31831, name: "عمرو محمد فوزى السيد", page: 10 },
-            { id: 31832, name: "عمرو محمود فتحى عبدالله غنيم", page: 10 },
-            { id: 31833, name: "عمرو مصطفى عبدالعزيز محمد", page: 10 },
-            { id: 31834, name: "عمرو وائل فتوح السيد سرور", page: 10 },
-            { id: 31835, name: "عمرو ياسر مختار مدبولى", page: 10 },
-            { id: 31836, name: "عهد اسامه احمد شوقى", page: 10 },
-            { id: 31837, name: "عهد تمام عبدالرزاق عبدالصمد", page: 10 },
-            { id: 31838, name: "عهد عصام محمد احمد", page: 10 },
-            { id: 31839, name: "عهد فتحى عبدالعزيز عبدالكريم", page: 10 },
-            { id: 31840, name: "عهد ماهر محمود امام", page: 10 },
-            { id: 31841, name: "عواطف محمد ابراهيم سليمان", page: 10 },
-            { id: 31842, name: "عواطف اسامه منير محمد عبدالباري", page: 10 },
-            { id: 31843, name: "عواطف حسام الدين سيد فرحات", page: 10 },
-            { id: 31844, name: "عيد علي عيد انور", page: 10 },
-            { id: 31845, name: "عيد محمود عيد ابو قريش", page: 10 },
-            { id: 31846, name: "غادة رمضان زغلول ابراهيم", page: 10 },
-            { id: 31847, name: "غاده احمد حباشى احمد سعيد", page: 10 },
-            { id: 31848, name: "غاده احمد محمود سالم", page: 10 },
-
-            // --- صفحة 11 ---
-            { id: 31850, name: "غاده حسنى عبدالنبى محمد", page: 11 },
-            { id: 31851, name: "غاده عبدالرازق مبروك احمد", page: 11 },
-            { id: 31852, name: "غاده يحيى محمد الصغير عبد اللطيف", page: 11 },
-            { id: 31853, name: "غرام هانى الشافعى السيد", page: 11 },
-            { id: 31854, name: "غيداء احمد حسيني محمد بركات", page: 11 },
-            { id: 31855, name: "فادى عادل جورج حبيب", page: 11 },
-            { id: 31856, name: "فارس احمد فارس احمد", page: 11 },
-            { id: 31857, name: "فارس محمد محمد حسن", page: 11 },
-            { id: 31858, name: "فاطمة خالد محمد خالد علي", page: 11 },
-            { id: 31859, name: "فاطمه ابراهيم بيومى محمد", page: 11 },
-            { id: 31860, name: "فاطمه ابراهيم عبدالهادى حسين على", page: 11 },
-            { id: 31861, name: "فاطمه ابراهيم فتحى محمد", page: 11 },
-            { id: 31862, name: "فاطمه ابوالفتوح اسماعيل محمد", page: 11 },
-            { id: 31863, name: "فاطمه احمد السيد ابراهيم احمد", page: 11 },
-            { id: 31864, name: "فاطمه احمد بدوى احمد حسانين", page: 11 },
-            { id: 31865, name: "فاطمه احمد رمضان رجب", page: 11 },
-            { id: 31866, name: "فاطمه احمد طلعت محمود", page: 11 },
-            { id: 31867, name: "فاطمه احمد محمد توفيق", page: 11 },
-            { id: 31868, name: "فاطمه احمد معروف عبدالله", page: 11 },
-            { id: 31869, name: "فاطمه اسامه رمضان سيد احمد", page: 11 },
-            { id: 31870, name: "فاطمه اسلام انور عبده عواض", page: 11 },
-            { id: 31871, name: "فاطمه اشرف قرنى جنيدى", page: 11 },
-            { id: 31872, name: "فاطمه الزهراء ابراهيم جمال عبدالنبى", page: 11 },
-
-            // --- صفحة 12 ---
-            { id: 31875, name: "فاطمه الزهراء احمد محمد احمد الدسوقي", page: 12 },
-            { id: 31876, name: "فاطمه الزهراء حسني عبد الفتاح", page: 12 },
-            { id: 31877, name: "فاطمه الزهراء شعبان محمود", page: 12 },
-            { id: 31878, name: "فاطمه الزهراء عصام عبد العال عبدالرحمن", page: 12 },
-            { id: 31879, name: "فاطمه الزهراء محمد سالم حسن", page: 12 },
-            { id: 31880, name: "فاطمه الزهراء محمود ادهم محمود قدح", page: 12 },
-            { id: 31881, name: "فاطمه السيد سعيد السيد محمود", page: 12 },
-            { id: 31882, name: "فاطمه السيد عبد الحميد الجندي حسانين", page: 12 },
-            { id: 31883, name: "فاطمه امير احمد عبد الحليم يحيى", page: 12 },
-            { id: 31884, name: "فاطمه امين نورالدين محمد", page: 12 },
-            { id: 31885, name: "فاطمه ايمن جميل عبدالعظيم محمد", page: 12 },
-            { id: 31886, name: "فاطمه بدر رضا يوسف", page: 12 },
-            { id: 31887, name: "فاطمه جمعه عبد الحميد محمد زيد", page: 12 },
-            { id: 31888, name: "فاطمه حسام حسن عز العرب", page: 12 },
-            { id: 31889, name: "فاطمه حسن علي ابراهيم", page: 12 },
-            { id: 31890, name: "فاطمه حسني عبد الهادي عبد الحميد", page: 12 },
-            { id: 31891, name: "فاطمه حسين رجب حفني", page: 12 },
-            { id: 31892, name: "فاطمه حمدي احمد علي محمد", page: 12 },
-            { id: 31893, name: "فاطمه حمدي محمد امين", page: 12 },
-            { id: 31894, name: "فاطمه خالد سعد احمد", page: 12 },
-            { id: 31895, name: "فاطمه خالد عبد الله عبدالمنعم", page: 12 },
-            { id: 31896, name: "فاطمه خيري محمد احمد", page: 12 },
-            { id: 31897, name: "فاطمه رأفت العوض سيد", page: 12 },
-            { id: 31898, name: "فاطمه ربيع احمد مرداش", page: 12 },
-
-            // --- صفحة 13 ---
-            { id: 31898, name: "فاطمه رجب حسان عبدالحفيظ", page: 13 },
-            { id: 31899, name: "فاطمه رضا مسلم السيد السيد", page: 13 },
-            { id: 31900, name: "فاطمه رمضان ابوزيد مهران", page: 13 },
-            { id: 31901, name: "فاطمه سعد عبد الحق جمعه", page: 13 },
-            { id: 31902, name: "فاطمه سعودي محمد السيد", page: 13 },
-            { id: 31903, name: "فاطمه سمير سعد محمد محمد", page: 13 },
-            { id: 31904, name: "فاطمه سيد جمعه حسان", page: 13 },
-            { id: 31905, name: "فاطمه سيد عبدالعزيز عبدالرحمن", page: 13 },
-            { id: 31906, name: "فاطمه سيف عبد العزيز محمد", page: 13 },
-            { id: 31907, name: "فاطمه سيف عبد الرازق عبد السميع", page: 13 },
-            { id: 31908, name: "فاطمه صادق خليفه محمد", page: 13 },
-            { id: 31909, name: "فاطمه صلاح عطا امام منصور", page: 13 },
-            { id: 31910, name: "فاطمه صلاح يوسف واصلي", page: 13 },
-            { id: 31911, name: "فاطمه طارق ابراهيم ابو العزم", page: 13 },
-            { id: 31912, name: "فاطمه طارق يحيى محمد", page: 13 },
-            { id: 31913, name: "فاطمه طه شافعي شافعي", page: 13 },
-            { id: 31914, name: "فاطمه طه عبد الكريم عبد العظيم", page: 13 },
-            { id: 31915, name: "فاطمه عادل احمد ابراهيم", page: 13 },
-            { id: 31916, name: "فاطمه عادل عربي ياسين", page: 13 },
-            { id: 31917, name: "فاطمه عبد الباسط عبد الصمد حسن الشنطوري", page: 13 },
-            { id: 31918, name: "فاطمه عبد المجيد عبد الحميد علي", page: 13 },
-            { id: 31919, name: "فاطمه عطا محمد احمد", page: 13 },
-            { id: 31920, name: "فاطمه علاء الدين عبد السميع عبد الحميد حيدر", page: 13 },
-            { id: 31921, name: "فاطمه علاء الدين عبد الرحمن احمد ابراهيم", page: 13 },
-
-            // --- صفحة 14 ---
-            { id: 31922, name: "فاطمه علي ابراهيم علي مرسي", page: 14 },
-            { id: 31923, name: "فاطمه عماد احمد عوض", page: 14 },
-            { id: 31924, name: "فاطمه عمرو محمد سيد امام يونس", page: 14 },
-            { id: 31925, name: "فاطمه عيد السيد علي", page: 14 },
-            { id: 31926, name: "فاطمه ماهر حسين عبد الجواد", page: 14 },
-            { id: 31927, name: "فاطمه مجدي محمد عبد العزيز", page: 14 },
-            { id: 31928, name: "فاطمه مجدي مختار احمد", page: 14 },
-            { id: 31929, name: "فاطمه محمد احمد عبد الله", page: 14 },
-            { id: 31930, name: "فاطمه محمد المرسي فؤاد", page: 14 }
-        ];
-
-        // ==========================================
-        // منطق البحث والبرمجة
-        // ==========================================
-        const searchInput = document.getElementById('searchInput');
-        const resultsArea = document.getElementById('resultsArea');
-        const resultCount = document.getElementById('resultCount');
-        const countNum = document.getElementById('countNum');
-
-        // دالة لتنظيف النص العربي (إزالة التشكيل وتوحيد الألف والهاء)
-        function normalizeArabic(text) {
-            return text
-                .replace(/(آ|إ|أ)/g, 'ا')
-                .replace(/(ة)/g, 'ه')
-                .replace(/(ى)/g, 'ي')
-                .replace(/[\u064B-\u065F]/g, '') // إزالة التشكيل
-                .trim()
-                .toLowerCase();
-        }
-
-        function performSearch() {
-            const query = normalizeArabic(searchInput.value);
-            resultsArea.innerHTML = '';
-            
-            if (query.length < 2) {
-                resultsArea.innerHTML = '<div class="text-center text-gray-500 py-10">الرجاء كتابة حرفين على الأقل للبحث...</div>';
-                resultCount.classList.add('hidden');
-                return;
-            }
-
-            const filteredStudents = studentsDatabase.filter(student => {
-                return normalizeArabic(student.name).includes(query) || 
-                       student.id.toString().includes(query);
+        installBtn.addEventListener('click', (e) => {
+            // hide our install banner
+            installBanner.classList.add('hidden');
+            // Show the prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the A2HS prompt');
+                } else {
+                    console.log('User dismissed the A2HS prompt');
+                }
+                deferredPrompt = null;
             });
+        });
 
-            if (filteredStudents.length > 0) {
-                resultCount.classList.remove('hidden');
-                countNum.textContent = filteredStudents.length;
+        window.addEventListener('appinstalled', (event) => {
+            console.log('PWA was installed');
+            installBanner.classList.add('hidden');
+        });
 
-                filteredStudents.forEach(student => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white p-4 rounded-lg shadow border-r-4 border-green-500 flex justify-between items-center hover:bg-gray-50 transition-colors';
-                    
-                    card.innerHTML = `
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">${student.name}</h3>
-                            <span class="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded mt-1 inline-block">رقم الجلوس: ${student.id}</span>
-                        </div>
-                        <div class="text-center bg-blue-50 p-3 rounded-lg min-w-[100px]">
-                            <span class="block text-sm text-blue-600 font-bold mb-1">رقم الصفحة</span>
-                            <span class="text-3xl font-bold text-blue-800">${student.page}</span>
-                        </div>
-                    `;
-                    resultsArea.appendChild(card);
-                });
-            } else {
-                resultCount.classList.add('hidden');
-                resultsArea.innerHTML = `
-                    <div class="text-center py-8 bg-white rounded-lg border border-dashed border-gray-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="text-gray-600 font-bold">لم يتم العثور على طالب بهذا الاسم</p>
-                        <p class="text-sm text-gray-400">تأكد من كتابة الاسم بشكل صحيح</p>
-                    </div>
-                `;
-            }
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+            });
         }
-
-        searchInput.addEventListener('input', performSearch);
     </script>
 </body>
 </html>
